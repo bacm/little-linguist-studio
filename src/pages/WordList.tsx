@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -8,40 +8,94 @@ import {
   ArrowLeft, 
   Search, 
   Filter,
-  Droplets, 
-  Utensils, 
-  Dog, 
-  Users, 
-  Package,
-  Heart,
   Calendar
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useChild } from "@/contexts/ChildContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
-// Mock data for words
-const mockWords = [
-  { id: 1, word: "mouillé", category: "Actions", date: "1 Aug 2025", icon: <Droplets className="w-4 h-4" />, color: "lavender" },
-  { id: 2, word: "pomme", category: "Food", date: "30 Jul 2025", icon: <Utensils className="w-4 h-4" />, color: "mint" },
-  { id: 3, word: "chien", category: "Animals", date: "28 Jul 2025", icon: <Dog className="w-4 h-4" />, color: "peach" },
-  { id: 4, word: "maman", category: "Family", date: "25 Jul 2025", icon: <Users className="w-4 h-4" />, color: "primary" },
-  { id: 5, word: "balle", category: "Objects", date: "22 Jul 2025", icon: <Package className="w-4 h-4" />, color: "mint" },
-  { id: 6, word: "eau", category: "Food", date: "20 Jul 2025", icon: <Utensils className="w-4 h-4" />, color: "mint" },
-  { id: 7, word: "chat", category: "Animals", date: "18 Jul 2025", icon: <Dog className="w-4 h-4" />, color: "peach" },
-  { id: 8, word: "papa", category: "Family", date: "15 Jul 2025", icon: <Users className="w-4 h-4" />, color: "primary" },
-  { id: 9, word: "courir", category: "Actions", date: "12 Jul 2025", icon: <Heart className="w-4 h-4" />, color: "lavender" },
-  { id: 10, word: "livre", category: "Objects", date: "10 Jul 2025", icon: <Package className="w-4 h-4" />, color: "mint" },
-];
+interface Word {
+  id: string;
+  word: string;
+  category_id: string;
+  date_learned: string;
+  word_categories?: {
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+  };
+}
 
-const categories = ["All", "Food", "Animals", "Actions", "Family", "Objects"];
+interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+}
 
 const WordList = () => {
   const navigate = useNavigate();
+  const { currentChild, loading: childLoading } = useChild();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [words, setWords] = useState<Word[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredWords = mockWords.filter(word => {
+  const fetchData = async () => {
+    if (!user || !currentChild) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Fetch categories
+      const { data: categoriesData } = await supabase
+        .from('word_categories')
+        .select('*')
+        .order('name');
+
+      setCategories(categoriesData || []);
+
+      // Fetch words
+      const { data: wordsData } = await supabase
+        .from('words')
+        .select(`
+          *,
+          word_categories (
+            id,
+            name,
+            icon,
+            color
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('child_id', currentChild.id)
+        .order('date_learned', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      setWords(wordsData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!childLoading) {
+      fetchData();
+    }
+  }, [user, currentChild, childLoading]);
+
+  const filteredWords = words.filter(word => {
     const matchesSearch = word.word.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || word.category === selectedCategory;
+    const matchesCategory = selectedCategory === "All" || 
+      (word.word_categories?.name === selectedCategory);
     return matchesSearch && matchesCategory;
   });
 
@@ -54,6 +108,29 @@ const WordList = () => {
     };
     return colorMap[color as keyof typeof colorMap] || "bg-secondary text-secondary-foreground";
   };
+
+  if (childLoading || loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="max-w-sm mx-auto text-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentChild) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="max-w-sm mx-auto text-center space-y-4">
+          <p className="text-muted-foreground">No child profiles found.</p>
+          <Button onClick={() => navigate('/settings')}>
+            Add Your First Child
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -73,7 +150,7 @@ const WordList = () => {
             </Button>
             <div>
               <h1 className="text-xl font-bold text-foreground">All Words</h1>
-              <p className="text-sm text-muted-foreground">{filteredWords.length} words found</p>
+              <p className="text-sm text-muted-foreground">{currentChild.name}'s vocabulary - {filteredWords.length} words found</p>
             </div>
           </div>
 
@@ -93,18 +170,30 @@ const WordList = () => {
             <Filter className="w-4 h-4 text-muted-foreground" />
             <ScrollArea className="w-full">
               <div className="flex gap-2 pb-2">
+                <Badge
+                  variant={selectedCategory === "All" ? "default" : "secondary"}
+                  className={`cursor-pointer whitespace-nowrap ${
+                    selectedCategory === "All" 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-card text-foreground hover:bg-muted"
+                  }`}
+                  onClick={() => setSelectedCategory("All")}
+                >
+                  All
+                </Badge>
                 {categories.map((category) => (
                   <Badge
-                    key={category}
-                    variant={selectedCategory === category ? "default" : "secondary"}
+                    key={category.id}
+                    variant={selectedCategory === category.name ? "default" : "secondary"}
                     className={`cursor-pointer whitespace-nowrap ${
-                      selectedCategory === category 
+                      selectedCategory === category.name 
                         ? "bg-primary text-primary-foreground" 
                         : "bg-card text-foreground hover:bg-muted"
                     }`}
-                    onClick={() => setSelectedCategory(category)}
+                    onClick={() => setSelectedCategory(category.name)}
                   >
-                    {category}
+                    <span className="mr-1">{category.icon}</span>
+                    {category.name}
                   </Badge>
                 ))}
               </div>
@@ -123,19 +212,27 @@ const WordList = () => {
                   onClick={() => navigate(`/words/${wordItem.id}`)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getCategoryColor(wordItem.color)}`}>
-                      {wordItem.icon}
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      wordItem.word_categories ? 
+                        getCategoryColor(wordItem.word_categories.color) : 
+                        'bg-secondary text-secondary-foreground'
+                    }`}>
+                      <span className="text-lg">
+                        {wordItem.word_categories?.icon || '📝'}
+                      </span>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <h3 className="font-semibold text-foreground text-lg">{wordItem.word}</h3>
                         <Badge variant="secondary" className="text-xs">
-                          {wordItem.category}
+                          {wordItem.word_categories?.name || 'Uncategorized'}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-1 mt-1">
                         <Calendar className="w-3 h-3 text-muted-foreground" />
-                        <p className="text-muted-foreground text-sm">{wordItem.date}</p>
+                        <p className="text-muted-foreground text-sm">
+                          {format(new Date(wordItem.date_learned), "d MMM yyyy")}
+                        </p>
                       </div>
                     </div>
                   </div>

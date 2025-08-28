@@ -1,9 +1,11 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BabyProfile } from "@/components/BabyProfile";
 import { WordCard } from "@/components/WordCard"; 
 import { CategoryChip } from "@/components/CategoryChip";
 import { ActionButton } from "@/components/ActionButton";
 import { VocabularyChart } from "@/components/VocabularyChart";
+import { AddWordDialog } from "@/components/AddWordDialog";
 import { Button } from "@/components/ui/button";
 import { 
   Droplets, 
@@ -20,11 +22,115 @@ import {
   Heart
 } from "lucide-react";
 import babyAvatar from "@/assets/baby-avatar.png";
+import { useChild } from "@/contexts/ChildContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { format, differenceInMonths } from "date-fns";
+
+interface Word {
+  id: string;
+  word: string;
+  category_id: string;
+  date_learned: string;
+  word_categories?: {
+    name: string;
+    icon: string;
+    color: string;
+  };
+}
 
 const Index = () => {
   const navigate = useNavigate();
+  const { currentChild, loading: childLoading } = useChild();
+  const { user } = useAuth();
+  const [totalWords, setTotalWords] = useState(0);
+  const [latestWord, setLatestWord] = useState<Word | null>(null);
+  const [loading, setLoading] = useState(true);
   
-  // Force rebuild to clear cached MilestoneCard references
+  const fetchWordsData = async () => {
+    if (!user || !currentChild) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Fetch total word count
+      const { count } = await supabase
+        .from('words')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('child_id', currentChild.id);
+
+      setTotalWords(count || 0);
+
+      // Fetch latest word
+      const { data: latestWords } = await supabase
+        .from('words')
+        .select(`
+          *,
+          word_categories (
+            name,
+            icon,
+            color
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('child_id', currentChild.id)
+        .order('date_learned', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (latestWords && latestWords.length > 0) {
+        setLatestWord(latestWords[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching words data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!childLoading) {
+      fetchWordsData();
+    }
+  }, [user, currentChild, childLoading]);
+
+  if (childLoading || loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="max-w-sm mx-auto text-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentChild) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="max-w-sm mx-auto text-center space-y-4">
+          <p className="text-muted-foreground">No child profiles found.</p>
+          <Button onClick={() => navigate('/settings')}>
+            Add Your First Child
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const calculateAge = (birthdate: string) => {
+    const months = differenceInMonths(new Date(), new Date(birthdate));
+    return `${months} months`;
+  };
+
+  const getCategoryIcon = (word: Word) => {
+    if (word.word_categories) {
+      return <span className="text-lg">{word.word_categories.icon}</span>;
+    }
+    return <Package className="w-5 h-5 text-primary" />;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile App Container */}
@@ -45,8 +151,8 @@ const Index = () => {
           </div>
           
           <BabyProfile 
-            name="Ada" 
-            age="18 months" 
+            name={currentChild.name} 
+            age={calculateAge(currentChild.birthdate)} 
             imageUrl={babyAvatar}
           />
         </div>
@@ -55,17 +161,25 @@ const Index = () => {
         <div className="p-4 space-y-4">
           
           {/* Total Words Card */}
-          <WordCard variant="total" count={56} word="" date="" icon={null} />
+          <WordCard variant="total" count={totalWords} word="" date="" icon={null} />
 
           {/* Latest Word */}
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Latest Word</h2>
-            <WordCard 
-              word="mouillé" 
-              date="1 Aug 2025"
-              icon={<Droplets className="w-5 h-5 text-primary" />}
-            />
-          </div>
+          {latestWord ? (
+            <div>
+              <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Latest Word</h2>
+              <WordCard 
+                word={latestWord.word} 
+                date={format(new Date(latestWord.date_learned), "d MMM yyyy")}
+                icon={getCategoryIcon(latestWord)}
+                wordId={latestWord.id}
+              />
+            </div>
+          ) : totalWords === 0 ? (
+            <div className="text-center py-8 px-4">
+              <p className="text-muted-foreground">No words added yet!</p>
+              <p className="text-sm text-muted-foreground mt-1">Tap the + button to add your first word</p>
+            </div>
+          ) : null}
 
           {/* Vocabulary Growth Chart */}
           <VocabularyChart />
@@ -117,12 +231,7 @@ const Index = () => {
 
         {/* Floating Add Button */}
         <div className="fixed bottom-6 right-4 z-10">
-          <Button
-            size="lg"
-            className="w-14 h-14 rounded-full bg-primary hover:bg-primary-dark shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110"
-          >
-            <Plus className="w-6 h-6" />
-          </Button>
+          <AddWordDialog onWordAdded={fetchWordsData} />
         </div>
       </div>
     </div>
