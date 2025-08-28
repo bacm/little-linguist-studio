@@ -25,6 +25,7 @@ interface WordCategory {
 export const AddWordDialog = ({ onWordAdded }: { onWordAdded?: () => void }) => {
   const [open, setOpen] = useState(false);
   const [word, setWord] = useState("");
+  const [pronunciation, setPronunciation] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [dateLearned, setDateLearned] = useState<Date>(new Date());
   const [notes, setNotes] = useState("");
@@ -90,6 +91,7 @@ export const AddWordDialog = ({ onWordAdded }: { onWordAdded?: () => void }) => 
           child_id: currentChild.id,
           user_id: user.id,
           category_id: categoryId || null,
+          pronunciation: pronunciation.trim() || null,
           date_learned: format(dateLearned, 'yyyy-MM-dd'),
           notes: notes.trim() || null,
         });
@@ -105,6 +107,7 @@ export const AddWordDialog = ({ onWordAdded }: { onWordAdded?: () => void }) => 
 
       // Reset form
       setWord("");
+      setPronunciation("");
       setNotes("");
       setDateLearned(new Date());
       setOpen(false);
@@ -150,6 +153,16 @@ export const AddWordDialog = ({ onWordAdded }: { onWordAdded?: () => void }) => 
               onChange={(e) => setWord(e.target.value)}
               placeholder="Enter the word..."
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pronunciation">Pronunciation (optional)</Label>
+            <Input
+              id="pronunciation"
+              value={pronunciation}
+              onChange={(e) => setPronunciation(e.target.value)}
+              placeholder="e.g., cac, mah-mah..."
             />
           </div>
 
