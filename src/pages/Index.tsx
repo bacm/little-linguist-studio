@@ -6,20 +6,11 @@ import { CategoryChip } from "@/components/CategoryChip";
 import { ActionButton } from "@/components/ActionButton";
 import { VocabularyChart } from "@/components/VocabularyChart";
 import { AddWordDialog } from "@/components/AddWordDialog";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { 
-  Droplets, 
-  Utensils, 
-  Dog, 
-  Users, 
   Package,
-  Mic,
-  Bot,
-  CreditCard,
-  BarChart3,
-  Share,
-  Plus,
-  Heart
+  Plus
 } from "lucide-react";
 import babyAvatar from "@/assets/baby-avatar.png";
 import { useChild } from "@/contexts/ChildContext";
@@ -187,53 +178,12 @@ const Index = () => {
           {/* Vocabulary Growth Chart */}
           <VocabularyChart />
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2">
-            <ActionButton
-              icon={<Mic className="w-4 h-4" />}
-              label="Voice Recognition"
-              variant="mint"
-              size="sm"
-            />
-            <ActionButton
-              icon={<Bot className="w-4 h-4" />}
-              label="AI Suggestions"
-              variant="lavender"
-              size="sm"
-              navigateTo="/ai-suggestions"
-            />
-            <ActionButton
-              icon={<CreditCard className="w-4 h-4" />}
-              label="Flashcards"
-              variant="peach"
-              size="sm"
-              navigateTo="/flashcards"
-            />
-            <ActionButton
-              icon={<BarChart3 className="w-4 h-4" />}
-              label="Statistics"
-              variant="default"
-              size="sm"
-              navigateTo="/statistics"
-            />
-          </div>
-
-          {/* Export/Share */}
-          <div className="pt-2">
-            <ActionButton
-              icon={<Share className="w-4 h-4" />}
-              label="Export Progress (CSV/PDF)"
-              variant="default"
-              size="sm"
-            />
-          </div>
-
-          {/* Bottom Spacing */}
-          <div className="h-20" />
+          {/* Bottom Spacing for Navigation */}
+          <div className="h-28" />
         </div>
 
         {/* Floating Add Button */}
-        <div className="fixed bottom-6 right-4 z-50">
+        <div className="fixed bottom-20 right-4 z-50">
           <div className="relative">
             <AddWordDialog onWordAdded={fetchWordsData} />
             {/* Debug helper - remove after testing */}
@@ -244,6 +194,9 @@ const Index = () => {
             )}
           </div>
         </div>
+
+        {/* Bottom Navigation */}
+        <BottomNavigation />
       </div>
     </div>
   );
