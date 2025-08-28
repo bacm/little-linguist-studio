@@ -9,6 +9,11 @@ import {
   FileText,
   Heart,
   Tag,
+  Settings,
+  Menu,
+  BookOpen,
+  TrendingUp,
+  Zap,
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
@@ -91,12 +96,64 @@ export default function Index() {
         
         {/* Header */}
         <div className="bg-primary-light/30 p-4">
-          <h1 className="text-2xl font-bold text-foreground">
-            {currentChild.name}'s Learning Journey
-          </h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold text-foreground">
+              {currentChild.name}'s Learning Journey
+            </h1>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate('/settings')}
+              className="text-foreground hover:bg-white/20"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+          </div>
           <p className="text-muted-foreground">
             Track your baby's first words and milestones.
           </p>
+        </div>
+
+        {/* Quick Navigation */}
+        <div className="p-4 pb-0">
+          <div className="grid grid-cols-4 gap-3">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/words')}
+              className="flex flex-col h-16 border-0 bg-card shadow-sm"
+            >
+              <BookOpen className="w-5 h-5 mb-1" />
+              <span className="text-xs">Words</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/statistics')}
+              className="flex flex-col h-16 border-0 bg-card shadow-sm"
+            >
+              <TrendingUp className="w-5 h-5 mb-1" />
+              <span className="text-xs">Stats</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/flashcards')}
+              className="flex flex-col h-16 border-0 bg-card shadow-sm"
+            >
+              <FileText className="w-5 h-5 mb-1" />
+              <span className="text-xs">Cards</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/ai-suggestions')}
+              className="flex flex-col h-16 border-0 bg-card shadow-sm"
+            >
+              <Zap className="w-5 h-5 mb-1" />
+              <span className="text-xs">AI Tips</span>
+            </Button>
+          </div>
         </div>
 
         {/* Content */}
