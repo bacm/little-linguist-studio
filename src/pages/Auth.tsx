@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
+  const [showResetForm, setShowResetForm] = useState(false);
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -214,28 +216,76 @@ const Auth = () => {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!resetEmail) {
+      toast({
+        title: "Missing email",
+        description: "Please enter your email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+        redirectTo: `${window.location.origin}/auth?reset=true`
+      });
+
+      if (error) {
+        toast({
+          title: "Reset failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Reset email sent!",
+        description: "Check your email for a password reset link.",
+      });
+      
+      setShowResetForm(false);
+      setResetEmail("");
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Unexpected error",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-mint-light/10 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-2">Baby Speech Tracker</h1>
-          <p className="text-muted-foreground">Track your little one's speech development</p>
+    <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-mint-light/10 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-md mx-auto">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-2">Baby Speech Tracker</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Track your little one's speech development</p>
         </div>
 
-        <Card className="shadow-elegant border-0">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl">Welcome</CardTitle>
-            <CardDescription>
+        <Card className="shadow-lg border-0 bg-card/80 backdrop-blur-sm">
+          <CardHeader className="text-center pb-2 px-4 sm:px-6">
+            <CardTitle className="text-xl sm:text-2xl">Welcome</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
               Sign in to your account or create a new one
             </CardDescription>
           </CardHeader>
           
-          <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
+          <CardContent className="px-4 sm:px-6">
+            {!showResetForm ? (
+              <Tabs defaultValue="signin" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
+                  <TabsTrigger value="signin" className="text-sm sm:text-base">Sign In</TabsTrigger>
+                  <TabsTrigger value="signup" className="text-sm sm:text-base">Sign Up</TabsTrigger>
+                </TabsList>
 
               {/* Sign In Tab */}
               <TabsContent value="signin">
@@ -297,6 +347,17 @@ const Auth = () => {
                       </>
                     )}
                   </Button>
+                  
+                  <div className="text-center mt-4">
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="text-sm text-muted-foreground hover:text-primary p-0 h-auto"
+                      onClick={() => setShowResetForm(true)}
+                    >
+                      Forgot your password?
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
 
@@ -380,10 +441,68 @@ const Auth = () => {
                 </form>
               </TabsContent>
             </Tabs>
+            ) : (
+              /* Password Reset Form */
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">Reset Password</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Enter your email and we'll send you a reset link
+                  </p>
+                </div>
+                
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="reset-email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      type="submit" 
+                      className="flex-1" 
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Sending..." : (
+                        <>
+                          Send Reset Link
+                          <RotateCcw className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <div className="text-center">
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="text-sm text-muted-foreground hover:text-primary p-0 h-auto"
+                      onClick={() => {
+                        setShowResetForm(false);
+                        setResetEmail("");
+                      }}
+                    >
+                      Back to Sign In
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <div className="text-center mt-6 text-sm text-muted-foreground">
+        <div className="text-center mt-4 sm:mt-6 text-xs sm:text-sm text-muted-foreground px-2">
           <p>By creating an account, you agree to our terms of service and privacy policy.</p>
         </div>
       </div>
