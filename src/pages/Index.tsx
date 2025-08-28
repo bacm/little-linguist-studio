@@ -175,9 +175,12 @@ const Index = () => {
               />
             </div>
           ) : totalWords === 0 ? (
-            <div className="text-center py-8 px-4">
-              <p className="text-muted-foreground">No words added yet!</p>
-              <p className="text-sm text-muted-foreground mt-1">Tap the + button to add your first word</p>
+            <div className="text-center py-8 px-4 bg-card rounded-lg border-2 border-dashed border-muted">
+              <div className="mb-4">
+                <Plus className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground font-medium">No words added yet!</p>
+                <p className="text-sm text-muted-foreground mt-1">Tap the + button below to add your first word</p>
+              </div>
             </div>
           ) : null}
 
@@ -230,8 +233,16 @@ const Index = () => {
         </div>
 
         {/* Floating Add Button */}
-        <div className="fixed bottom-6 right-4 z-10">
-          <AddWordDialog onWordAdded={fetchWordsData} />
+        <div className="fixed bottom-6 right-4 z-50">
+          <div className="relative">
+            <AddWordDialog onWordAdded={fetchWordsData} />
+            {/* Debug helper - remove after testing */}
+            {totalWords === 0 && (
+              <div className="absolute -top-12 -left-12 bg-primary text-primary-foreground text-xs px-2 py-1 rounded whitespace-nowrap animate-bounce">
+                👆 Tap to add word!
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
