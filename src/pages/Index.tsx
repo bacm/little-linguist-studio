@@ -1,7 +1,6 @@
 import { BabyProfile } from "@/components/BabyProfile";
 import { WordCard } from "@/components/WordCard"; 
 import { CategoryChip } from "@/components/CategoryChip";
-import { MilestoneCard } from "@/components/MilestoneCard";
 import { ActionButton } from "@/components/ActionButton";
 import { VocabularyChart } from "@/components/VocabularyChart";
 import { Button } from "@/components/ui/button";
@@ -17,8 +16,6 @@ import {
   BarChart3,
   Share,
   Plus,
-  Trophy,
-  MessageCircle,
   Heart
 } from "lucide-react";
 import babyAvatar from "@/assets/baby-avatar.png";
@@ -94,34 +91,6 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Milestones */}
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground mb-3 px-1">Milestones & Badges</h2>
-            <div className="grid grid-cols-1 gap-2">
-              <MilestoneCard
-                title="10 words"
-                achieved={true}
-                target={10}
-                current={56}
-                icon={<Trophy className="w-4 h-4" />}
-              />
-              <MilestoneCard
-                title="50 words"
-                achieved={true}
-                target={50}
-                current={56}
-                icon={<Trophy className="w-4 h-4" />}
-              />
-              <MilestoneCard
-                title="First phrase"
-                achieved={false}
-                target={1}
-                current={0}
-                icon={<MessageCircle className="w-4 h-4" />}
-              />
-            </div>
-          </div>
-
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-2">
             <ActionButton
@@ -147,6 +116,7 @@ const Index = () => {
               label="Statistics"
               variant="default"
               size="sm"
+              navigateTo="/statistics"
             />
           </div>
 

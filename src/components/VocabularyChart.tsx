@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { useNavigate } from "react-router-dom";
 
 const mockData = [
   { date: 'Jan', words: 5 },
@@ -12,8 +13,13 @@ const mockData = [
 ];
 
 export const VocabularyChart = () => {
+  const navigate = useNavigate();
+
   return (
-    <Card className="p-4 bg-card border-0 shadow-md">
+    <Card 
+      className="p-4 bg-card border-0 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={() => navigate("/statistics")}
+    >
       <div className="mb-4">
         <h3 className="font-semibold text-foreground">Vocabulary Growth</h3>
         <p className="text-muted-foreground text-sm">Words learned over time</p>

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface ActionButtonProps {
   icon: React.ReactNode;
@@ -6,9 +7,19 @@ interface ActionButtonProps {
   variant?: "default" | "mint" | "peach" | "lavender";
   size?: "sm" | "default" | "lg";
   onClick?: () => void;
+  navigateTo?: string;
 }
 
-export const ActionButton = ({ icon, label, variant = "default", size = "default", onClick }: ActionButtonProps) => {
+export const ActionButton = ({ icon, label, variant = "default", size = "default", onClick, navigateTo }: ActionButtonProps) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else if (navigateTo) {
+      navigate(navigateTo);
+    }
+  };
   const getVariantClasses = () => {
     switch (variant) {
       case "mint":
@@ -24,7 +35,7 @@ export const ActionButton = ({ icon, label, variant = "default", size = "default
 
   return (
     <Button
-      onClick={onClick}
+      onClick={handleClick}
       className={`${getVariantClasses()} shadow-md hover:scale-105 transition-all duration-200 flex items-center space-x-2`}
       size={size}
     >
