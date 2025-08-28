@@ -21,7 +21,7 @@ type Word = Database['public']['Tables']['words']['Row'] & {
 export default function WordList() {
   const [words, setWords] = useState<Word[]>([]);
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -50,7 +50,7 @@ export default function WordList() {
           .eq('child_id', currentChild.id)
           .order('created_at', { ascending: false });
 
-        if (categoryFilter) {
+        if (categoryFilter && categoryFilter !== "all") {
           query = query.eq('category_id', categoryFilter);
         }
 
@@ -174,7 +174,7 @@ export default function WordList() {
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
