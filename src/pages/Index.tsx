@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { BabyProfile } from "@/components/BabyProfile";
 import { WordCard } from "@/components/WordCard"; 
 import { CategoryChip } from "@/components/CategoryChip";
@@ -21,6 +22,8 @@ import {
 import babyAvatar from "@/assets/baby-avatar.png";
 
 const Index = () => {
+  const navigate = useNavigate();
+  
   // Force rebuild to clear cached MilestoneCard references
   return (
     <div className="min-h-screen bg-background">
@@ -28,7 +31,19 @@ const Index = () => {
       <div className="max-w-sm mx-auto bg-background min-h-screen">
         
         {/* Header with Baby Profile */}
-        <div className="bg-primary-light/30 rounded-b-3xl">
+        <div className="bg-primary-light/30 rounded-b-3xl relative">
+          {/* Settings Button */}
+          <div className="absolute top-4 right-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/settings')}
+              className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm"
+            >
+              <span className="text-lg">⚙️</span>
+            </Button>
+          </div>
+          
           <BabyProfile 
             name="Ada" 
             age="18 months" 

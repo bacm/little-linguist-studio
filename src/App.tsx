@@ -9,6 +9,7 @@ import WordDetail from "./pages/WordDetail";
 import Statistics from "./pages/Statistics";
 import AISuggestions from "./pages/AISuggestions";
 import Flashcards from "./pages/Flashcards";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/statistics" element={<Statistics />} />
           <Route path="/ai-suggestions" element={<AISuggestions />} />
           <Route path="/flashcards" element={<Flashcards />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
