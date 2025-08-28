@@ -1,263 +1,252 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { BabyProfile } from "@/components/BabyProfile";
+import { WordCard } from "@/components/WordCard"; 
+import { CategoryChip } from "@/components/CategoryChip";
+import { ActionButton } from "@/components/ActionButton";
+import { VocabularyChart } from "@/components/VocabularyChart";
+import { AddWordDialog } from "@/components/AddWordDialog";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import {
-  ArrowRight,
-  BarChart,
-  Calendar,
-  FileText,
-  Heart,
-  Tag,
-  Settings,
-  Menu,
-  BookOpen,
-  TrendingUp,
-  Zap,
+import { 
+  Droplets, 
+  Utensils, 
+  Dog, 
+  Users, 
+  Package,
+  Mic,
+  Bot,
+  CreditCard,
+  BarChart3,
+  Share,
+  Plus,
+  Heart
 } from "lucide-react";
-import { format, subDays } from "date-fns";
-import { useAuth } from "@/contexts/AuthContext";
+import babyAvatar from "@/assets/baby-avatar.png";
 import { useChild } from "@/contexts/ChildContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { WordCard } from "@/components/WordCard";
+import { format, differenceInMonths } from "date-fns";
 
-export default function Index() {
+interface Word {
+  id: string;
+  word: string;
+  category_id: string;
+  date_learned: string;
+  word_categories?: {
+    name: string;
+    icon: string;
+    color: string;
+  };
+}
+
+const Index = () => {
   const navigate = useNavigate();
+  const { currentChild, loading: childLoading } = useChild();
   const { user } = useAuth();
-  const { currentChild } = useChild();
-  const [recentWords, setRecentWords] = useState<any[]>([]);
   const [totalWords, setTotalWords] = useState(0);
-  const [streak, setStreak] = useState(0);
-
-  useEffect(() => {
+  const [latestWord, setLatestWord] = useState<Word | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  const fetchWordsData = async () => {
     if (!user || !currentChild) {
+      setLoading(false);
       return;
     }
 
-    const fetchRecentWords = async () => {
-      const sevenDaysAgo = subDays(new Date(), 7);
-      const { data, error } = await supabase
+    try {
+      // Fetch total word count
+      const { count } = await supabase
         .from('words')
-        .select('*, word_categories(name, icon, color)')
-        .eq('child_id', currentChild.id)
-        .gte('created_at', sevenDaysAgo.toISOString())
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      if (error) {
-        console.error("Error fetching recent words:", error);
-        return;
-      }
-
-      setRecentWords(data);
-    };
-
-    const fetchTotalWords = async () => {
-      const { count, error } = await supabase
-        .from('words')
-        .select('*', { count: 'exact' })
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
         .eq('child_id', currentChild.id);
 
-      if (error) {
-        console.error("Error fetching total words count:", error);
-        return;
-      }
-
       setTotalWords(count || 0);
-    };
 
-    const fetchStreak = async () => {
-      // TODO: Implement streak calculation logic
-      // This is a placeholder, replace with actual calculation
-      setStreak(5);
-    };
+      // Fetch latest word
+      const { data: latestWords } = await supabase
+        .from('words')
+        .select(`
+          *,
+          word_categories (
+            name,
+            icon,
+            color
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('child_id', currentChild.id)
+        .order('date_learned', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-    fetchRecentWords();
-    fetchTotalWords();
-    fetchStreak();
-  }, [user, currentChild]);
+      if (latestWords && latestWords.length > 0) {
+        setLatestWord(latestWords[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching words data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (!currentChild) {
+  useEffect(() => {
+    if (!childLoading) {
+      fetchWordsData();
+    }
+  }, [user, currentChild, childLoading]);
+
+  if (childLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-xl font-bold text-foreground mb-2">No child selected</h1>
-          <p className="text-muted-foreground">Please select a child to view their progress.</p>
-          <Button onClick={() => navigate('/children')}>Go to Children</Button>
+        <div className="max-w-sm mx-auto text-center">
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
+
+  if (!currentChild) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="max-w-sm mx-auto text-center space-y-4">
+          <p className="text-muted-foreground">No child profiles found.</p>
+          <Button onClick={() => navigate('/settings')}>
+            Add Your First Child
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const calculateAge = (birthdate: string) => {
+    const months = differenceInMonths(new Date(), new Date(birthdate));
+    return `${months} months`;
+  };
+
+  const getCategoryIcon = (word: Word) => {
+    if (word.word_categories) {
+      return <span className="text-lg">{word.word_categories.icon}</span>;
+    }
+    return <Package className="w-5 h-5 text-primary" />;
+  };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile App Container */}
       <div className="max-w-sm mx-auto bg-background min-h-screen">
         
-        {/* Header */}
-        <div className="bg-primary-light/30 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold text-foreground">
-              {currentChild.name}'s Learning Journey
-            </h1>
-            <Button 
-              variant="ghost" 
+        {/* Header with Baby Profile */}
+        <div className="bg-primary-light/30 rounded-b-3xl relative">
+          {/* Settings Button */}
+          <div className="absolute top-4 right-4">
+            <Button
+              variant="ghost"
               size="icon"
               onClick={() => navigate('/settings')}
-              className="text-foreground hover:bg-white/20"
+              className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm"
             >
-              <Settings className="w-5 h-5" />
+              <span className="text-lg">⚙️</span>
             </Button>
           </div>
-          <p className="text-muted-foreground">
-            Track your baby's first words and milestones.
-          </p>
-        </div>
-
-        {/* Quick Navigation */}
-        <div className="p-4 pb-0">
-          <div className="grid grid-cols-4 gap-3">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/words')}
-              className="flex flex-col h-16 border-0 bg-card shadow-sm"
-            >
-              <BookOpen className="w-5 h-5 mb-1" />
-              <span className="text-xs">Words</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/statistics')}
-              className="flex flex-col h-16 border-0 bg-card shadow-sm"
-            >
-              <TrendingUp className="w-5 h-5 mb-1" />
-              <span className="text-xs">Stats</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/flashcards')}
-              className="flex flex-col h-16 border-0 bg-card shadow-sm"
-            >
-              <FileText className="w-5 h-5 mb-1" />
-              <span className="text-xs">Cards</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/ai-suggestions')}
-              className="flex flex-col h-16 border-0 bg-card shadow-sm"
-            >
-              <Zap className="w-5 h-5 mb-1" />
-              <span className="text-xs">AI Tips</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-4 space-y-6">
           
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-4">
-            <Card className="bg-card border-0 shadow-sm">
-              <div className="p-3 space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <BarChart className="w-4 h-4" />
-                  <span>Total Words</span>
-                </div>
-                <div className="text-3xl font-bold text-foreground">{totalWords}</div>
+          <BabyProfile 
+            name={currentChild.name} 
+            age={calculateAge(currentChild.birthdate)} 
+            imageUrl={babyAvatar}
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="p-4 space-y-4">
+          
+          {/* Total Words Card */}
+          <WordCard variant="total" count={totalWords} word="" date="" icon={null} />
+
+          {/* Latest Word */}
+          {latestWord ? (
+            <div>
+              <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Latest Word</h2>
+              <WordCard 
+                word={latestWord.word} 
+                date={format(new Date(latestWord.date_learned), "d MMM yyyy")}
+                icon={getCategoryIcon(latestWord)}
+                wordId={latestWord.id}
+              />
+            </div>
+          ) : totalWords === 0 ? (
+            <div className="text-center py-8 px-4 bg-card rounded-lg border-2 border-dashed border-muted">
+              <div className="mb-4">
+                <Plus className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground font-medium">No words added yet!</p>
+                <p className="text-sm text-muted-foreground mt-1">Tap the + button below to add your first word</p>
               </div>
-            </Card>
-            
-            <Card className="bg-card border-0 shadow-sm">
-              <div className="p-3 space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Heart className="w-4 h-4" />
-                  <span>Current Streak</span>
-                </div>
-                <div className="text-3xl font-bold text-foreground">{streak} days</div>
-              </div>
-            </Card>
+            </div>
+          ) : null}
+
+          {/* Vocabulary Growth Chart */}
+          <VocabularyChart />
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-2">
+            <ActionButton
+              icon={<Mic className="w-4 h-4" />}
+              label="Voice Recognition"
+              variant="mint"
+              size="sm"
+            />
+            <ActionButton
+              icon={<Bot className="w-4 h-4" />}
+              label="AI Suggestions"
+              variant="lavender"
+              size="sm"
+              navigateTo="/ai-suggestions"
+            />
+            <ActionButton
+              icon={<CreditCard className="w-4 h-4" />}
+              label="Flashcards"
+              variant="peach"
+              size="sm"
+              navigateTo="/flashcards"
+            />
+            <ActionButton
+              icon={<BarChart3 className="w-4 h-4" />}
+              label="Statistics"
+              variant="default"
+              size="sm"
+              navigateTo="/statistics"
+            />
           </div>
 
-          {/* Recent Words */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground">Recent Words</h3>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => navigate('/words')}
-                className="text-primary hover:text-primary-dark"
-              >
-                View All
-              </Button>
-            </div>
-            
-            {recentWords.length > 0 ? (
-              <div className="space-y-3">
-                {recentWords.map((word) => (
-                  <WordCard
-                    key={word.id}
-                    word={word.word}
-                    pronunciation={word.pronunciation}
-                    category={word.word_categories ? {
-                      name: word.word_categories.name,
-                      icon: word.word_categories.icon,
-                      color: word.word_categories.color
-                    } : undefined}
-                    dateLearned={word.date_learned}
-                    notes={word.notes}
-                    onClick={() => navigate(`/word/${word.id}`)}
-                  />
-                ))}
-              </div>
-            ) : totalWords === 0 ? (
-              <div className="text-center py-6">
-                <h4 className="text-xl text-muted-foreground mb-2">No words added yet!</h4>
-                <Button onClick={() => navigate('/words')}>Add First Word</Button>
-              </div>
-            ) : null}
-
-          </div>
-
-          {/* Milestones */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground">
-                Developmental Milestones
-              </h3>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => navigate('/milestones')}
-                className="text-primary hover:text-primary-dark"
-              >
-                View All
-              </Button>
-            </div>
-            
-            <Card className="bg-card border-0 shadow-sm">
-              <div className="p-3 space-y-2">
-                <h4 className="text-lg font-semibold text-foreground">
-                  First Steps
-                </h4>
-                <p className="text-muted-foreground">
-                  Celebrate when your baby takes their first steps!
-                </p>
-                <Button className="w-full">
-                  Track Milestone <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </Card>
+          {/* Export/Share */}
+          <div className="pt-2">
+            <ActionButton
+              icon={<Share className="w-4 h-4" />}
+              label="Export Progress (CSV/PDF)"
+              variant="default"
+              size="sm"
+            />
           </div>
 
           {/* Bottom Spacing */}
-          <div className="h-6" />
+          <div className="h-20" />
+        </div>
+
+        {/* Floating Add Button */}
+        <div className="fixed bottom-6 right-4 z-50">
+          <div className="relative">
+            <AddWordDialog onWordAdded={fetchWordsData} />
+            {/* Debug helper - remove after testing */}
+            {totalWords === 0 && (
+              <div className="absolute -top-12 -left-12 bg-primary text-primary-foreground text-xs px-2 py-1 rounded whitespace-nowrap animate-bounce">
+                👆 Tap to add word!
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default Index;

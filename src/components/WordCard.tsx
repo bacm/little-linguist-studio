@@ -1,84 +1,51 @@
-
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Calendar } from "lucide-react";
-import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface WordCardProps {
   word: string;
-  pronunciation?: string;
-  category?: {
-    name: string;
-    icon: string;
-    color: string;
-  };
-  dateLearned: string;
-  notes?: string;
-  onClick?: () => void;
+  date: string;
+  icon: React.ReactNode;
+  variant?: "total" | "latest";
+  count?: number;
+  wordId?: string;
 }
 
-export const WordCard = ({ 
-  word, 
-  pronunciation,
-  category, 
-  dateLearned, 
-  notes,
-  onClick 
-}: WordCardProps) => {
-  const getCategoryColor = (color?: string) => {
-    const colorMap = {
-      mint: "bg-mint-light text-mint-foreground border-mint",
-      peach: "bg-peach-light text-peach-foreground border-peach", 
-      lavender: "bg-lavender-light text-lavender-foreground border-lavender",
-      primary: "bg-primary-light text-primary-foreground border-primary"
-    };
-    return colorMap[color as keyof typeof colorMap] || "bg-secondary text-secondary-foreground border-secondary";
-  };
+export const WordCard = ({ word, date, icon, variant = "latest", count, wordId }: WordCardProps) => {
+  const navigate = useNavigate();
+
+  if (variant === "total") {
+    return (
+      <Card 
+        className="p-6 bg-mint-light border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+        onClick={() => navigate("/words")}
+      >
+        <div className="text-center space-y-2">
+          <div className="text-4xl font-bold text-mint-foreground">{count}</div>
+          <p className="text-mint-foreground font-medium">Total Words</p>
+          <div className="w-full h-2 bg-mint rounded-full mt-4">
+            <div 
+              className="h-full bg-mint-dark rounded-full transition-all duration-500"
+              style={{ width: `${Math.min((count || 0) / 100 * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card 
-      className="p-4 bg-card hover:shadow-md transition-shadow cursor-pointer border-0 shadow-sm"
-      onClick={onClick}
+      className="p-4 bg-card border-0 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={() => navigate(wordId ? `/words/${wordId}` : "/words")}
     >
-      <div className="space-y-3">
-        {/* Header with category icon and word */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            {category && (
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getCategoryColor(category.color)}`}>
-                <span className="text-lg">{category.icon}</span>
-              </div>
-            )}
-            <div>
-              <h3 className="font-semibold text-lg text-foreground">{word}</h3>
-              {pronunciation && (
-                <p className="text-sm text-muted-foreground italic">
-                  Says: "{pronunciation}"
-                </p>
-              )}
-            </div>
-          </div>
-          {category && (
-            <Badge className={`${getCategoryColor(category.color)} text-xs border-2`}>
-              {category.name}
-            </Badge>
-          )}
+      <div className="flex items-center space-x-3">
+        <div className="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center">
+          {icon}
         </div>
-
-        {/* Date learned */}
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <Calendar className="w-4 h-4" />
-          <span className="text-sm">
-            Learned {format(new Date(dateLearned), 'MMM d, yyyy')}
-          </span>
+        <div className="flex-1">
+          <h3 className="font-semibold text-foreground text-lg">{word}</h3>
+          <p className="text-muted-foreground text-sm">{date}</p>
         </div>
-
-        {/* Notes preview */}
-        {notes && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {notes}
-          </p>
-        )}
       </div>
     </Card>
   );

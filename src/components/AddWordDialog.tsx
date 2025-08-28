@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +25,6 @@ interface WordCategory {
 export const AddWordDialog = ({ onWordAdded }: { onWordAdded?: () => void }) => {
   const [open, setOpen] = useState(false);
   const [word, setWord] = useState("");
-  const [pronunciation, setPronunciation] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [dateLearned, setDateLearned] = useState<Date>(new Date());
   const [notes, setNotes] = useState("");
@@ -89,7 +87,6 @@ export const AddWordDialog = ({ onWordAdded }: { onWordAdded?: () => void }) => 
         .from('words')
         .insert({
           word: word.trim(),
-          pronunciation: pronunciation.trim() || null,
           child_id: currentChild.id,
           user_id: user.id,
           category_id: categoryId || null,
@@ -108,7 +105,6 @@ export const AddWordDialog = ({ onWordAdded }: { onWordAdded?: () => void }) => 
 
       // Reset form
       setWord("");
-      setPronunciation("");
       setNotes("");
       setDateLearned(new Date());
       setOpen(false);
@@ -154,16 +150,6 @@ export const AddWordDialog = ({ onWordAdded }: { onWordAdded?: () => void }) => 
               onChange={(e) => setWord(e.target.value)}
               placeholder="Enter the word..."
               required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="pronunciation">How {currentChild.name} says it (optional)</Label>
-            <Input
-              id="pronunciation"
-              value={pronunciation}
-              onChange={(e) => setPronunciation(e.target.value)}
-              placeholder="e.g., 'cac' for 'cat'"
             />
           </div>
 
