@@ -68,6 +68,7 @@ const Index = () => {
               label="AI Suggestions"
               variant="lavender"
               size="sm"
+              navigateTo="/ai-suggestions"
             />
             <ActionButton
               icon={<CreditCard className="w-4 h-4" />}

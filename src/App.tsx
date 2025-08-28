@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import WordList from "./pages/WordList";
 import WordDetail from "./pages/WordDetail";
 import Statistics from "./pages/Statistics";
+import AISuggestions from "./pages/AISuggestions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/words" element={<WordList />} />
           <Route path="/words/:id" element={<WordDetail />} />
           <Route path="/statistics" element={<Statistics />} />
+          <Route path="/ai-suggestions" element={<AISuggestions />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
