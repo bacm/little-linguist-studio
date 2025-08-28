@@ -26,7 +26,27 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					light: 'hsl(var(--primary-light))',
+					dark: 'hsl(var(--primary-dark))'
+				},
+				mint: {
+					DEFAULT: 'hsl(var(--mint))',
+					foreground: 'hsl(var(--mint-foreground))',
+					light: 'hsl(var(--mint-light))',
+					dark: 'hsl(var(--mint-dark))'
+				},
+				peach: {
+					DEFAULT: 'hsl(var(--peach))',
+					foreground: 'hsl(var(--peach-foreground))',
+					light: 'hsl(var(--peach-light))',
+					dark: 'hsl(var(--peach-dark))'
+				},
+				lavender: {
+					DEFAULT: 'hsl(var(--lavender))',
+					foreground: 'hsl(var(--lavender-foreground))',
+					light: 'hsl(var(--lavender-light))',
+					dark: 'hsl(var(--lavender-dark))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',

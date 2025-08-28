@@ -2,41 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Baby Speech Tracker Design System - Soft pastel palette with warm, loving tones */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Base background - soft warm white */
+    --background: 210 25% 98%;
+    --foreground: 215 25% 25%;
 
+    /* Card system - clean whites with subtle warmth */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 25%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 25%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Sky blue palette */
+    --primary: 200 85% 75%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 200 85% 85%;
+    --primary-dark: 200 85% 65%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Mint green - for growth and positive actions */
+    --mint: 150 60% 75%;
+    --mint-foreground: 150 60% 20%;
+    --mint-light: 150 60% 85%;
+    --mint-dark: 150 60% 65%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Peach - warm accent color */
+    --peach: 25 85% 80%;
+    --peach-foreground: 25 85% 25%;
+    --peach-light: 25 85% 90%;
+    --peach-dark: 25 85% 70%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Lavender - secondary elements */
+    --lavender: 270 50% 80%;
+    --lavender-foreground: 270 50% 25%;
+    --lavender-light: 270 50% 90%;
+    --lavender-dark: 270 50% 70%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Secondary and muted tones */
+    --secondary: 210 25% 95%;
+    --secondary-foreground: 215 25% 25%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --muted: 210 20% 94%;
+    --muted-foreground: 215 15% 50%;
 
-    --radius: 0.5rem;
+    --accent: 150 60% 85%;
+    --accent-foreground: 150 60% 20%;
+
+    --destructive: 0 70% 70%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 20% 90%;
+    --input: 210 20% 96%;
+    --ring: 200 85% 75%;
+
+    --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
 
