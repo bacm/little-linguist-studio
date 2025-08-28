@@ -33,7 +33,10 @@ export const WordCard = ({ word, date, icon, variant = "latest", count }: WordCa
   }
 
   return (
-    <Card className="p-4 bg-card border-0 shadow-md">
+    <Card 
+      className="p-4 bg-card border-0 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={() => navigate("/words/1")} // TODO: Use actual word ID
+    >
       <div className="flex items-center space-x-3">
         <div className="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center">
           {icon}
