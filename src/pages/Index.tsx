@@ -55,43 +55,6 @@ const Index = () => {
           {/* Vocabulary Growth Chart */}
           <VocabularyChart />
 
-          {/* Categories */}
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground mb-3 px-1">Categories</h2>
-            <div className="flex flex-wrap gap-2">
-              <CategoryChip 
-                label="Food" 
-                icon={<Utensils className="w-4 h-4" />}
-                color="mint"
-                count={12}
-              />
-              <CategoryChip 
-                label="Animals" 
-                icon={<Dog className="w-4 h-4" />}
-                color="peach"
-                count={8}
-              />
-              <CategoryChip 
-                label="Actions" 
-                icon={<Heart className="w-4 h-4" />}
-                color="lavender"
-                count={15}
-              />
-              <CategoryChip 
-                label="Family" 
-                icon={<Users className="w-4 h-4" />}
-                color="primary"
-                count={9}
-              />
-              <CategoryChip 
-                label="Objects" 
-                icon={<Package className="w-4 h-4" />}
-                color="mint"
-                count={12}
-              />
-            </div>
-          </div>
-
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-2">
             <ActionButton
