@@ -21,6 +21,7 @@ import {
 import babyAvatar from "@/assets/baby-avatar.png";
 
 const Index = () => {
+  // Force rebuild to clear cached MilestoneCard references
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile App Container */}
