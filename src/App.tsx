@@ -12,6 +12,8 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Force rebuild for AI suggestions route
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
