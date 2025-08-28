@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 interface WordCardProps {
   word: string;
@@ -9,9 +10,14 @@ interface WordCardProps {
 }
 
 export const WordCard = ({ word, date, icon, variant = "latest", count }: WordCardProps) => {
+  const navigate = useNavigate();
+
   if (variant === "total") {
     return (
-      <Card className="p-6 bg-mint-light border-0 shadow-lg">
+      <Card 
+        className="p-6 bg-mint-light border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+        onClick={() => navigate("/words")}
+      >
         <div className="text-center space-y-2">
           <div className="text-4xl font-bold text-mint-foreground">{count}</div>
           <p className="text-mint-foreground font-medium">Total Words</p>
