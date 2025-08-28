@@ -135,6 +135,7 @@ export type Database = {
           date_learned: string
           id: string
           notes: string | null
+          pronunciation: string | null
           updated_at: string
           user_id: string
           word: string
@@ -146,6 +147,7 @@ export type Database = {
           date_learned?: string
           id?: string
           notes?: string | null
+          pronunciation?: string | null
           updated_at?: string
           user_id: string
           word: string
@@ -157,6 +159,7 @@ export type Database = {
           date_learned?: string
           id?: string
           notes?: string | null
+          pronunciation?: string | null
           updated_at?: string
           user_id?: string
           word?: string

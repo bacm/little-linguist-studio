@@ -14,7 +14,8 @@ import { useChild } from "@/contexts/ChildContext";
 import { Database } from "@/integrations/supabase/types";
 
 type Word = Database['public']['Tables']['words']['Row'] & {
-  word_categories: Database['public']['Tables']['word_categories']['Row'] | null
+  word_categories: Database['public']['Tables']['word_categories']['Row'] | null;
+  pronunciation?: string;
 };
 
 export default function WordList() {
