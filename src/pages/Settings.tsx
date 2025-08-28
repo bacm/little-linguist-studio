@@ -162,14 +162,32 @@ const Settings = () => {
                 {userEmail || "Not logged in"}
               </div>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => navigate('/auth')}
+                >
                   <LogOut className="h-4 w-4 mr-1" />
-                  Logout
+                  {userEmail ? 'Switch Account' : 'Sign In'}
                 </Button>
-                <Button variant="destructive" size="sm" className="flex-1">
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
-                </Button>
+                {userEmail && (
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => {
+                      // For now, just show a message - actual account deletion would need more confirmation
+                      toast({
+                        title: "Account deletion",
+                        description: "Please contact support to delete your account.",
+                      });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
