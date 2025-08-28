@@ -75,6 +75,7 @@ const Index = () => {
               label="Flashcards"
               variant="peach"
               size="sm"
+              navigateTo="/flashcards"
             />
             <ActionButton
               icon={<BarChart3 className="w-4 h-4" />}
