@@ -6,6 +6,7 @@ import { CategoryChip } from "@/components/CategoryChip";
 import { ActionButton } from "@/components/ActionButton";
 import { VocabularyChart } from "@/components/VocabularyChart";
 import { AddWordDialog } from "@/components/AddWordDialog";
+import { VoiceRecognitionDialog } from "@/components/VoiceRecognitionDialog";
 import { Button } from "@/components/ui/button";
 import { 
   Droplets, 
@@ -46,6 +47,9 @@ const Index = () => {
   const [totalWords, setTotalWords] = useState(0);
   const [latestWord, setLatestWord] = useState<Word | null>(null);
   const [loading, setLoading] = useState(true);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [addWordOpen, setAddWordOpen] = useState(false);
+  const [voiceWord, setVoiceWord] = useState("");
   
   const fetchWordsData = async () => {
     if (!user || !currentChild) {
@@ -124,6 +128,12 @@ const Index = () => {
     return `${months} months`;
   };
 
+  const handleVoiceWord = (word: string) => {
+    setVoiceWord(word);
+    setVoiceOpen(false);
+    setAddWordOpen(true);
+  };
+
   const getCategoryIcon = (word: Word) => {
     if (word.word_categories) {
       return <span className="text-lg">{word.word_categories.icon}</span>;
@@ -194,6 +204,7 @@ const Index = () => {
               label="Voice Recognition"
               variant="mint"
               size="sm"
+              onClick={() => setVoiceOpen(true)}
             />
             <ActionButton
               icon={<Bot className="w-4 h-4" />}
@@ -235,7 +246,12 @@ const Index = () => {
         {/* Floating Add Button */}
         <div className="fixed bottom-6 right-4 z-50">
           <div className="relative">
-            <AddWordDialog onWordAdded={fetchWordsData} />
+            <AddWordDialog
+              onWordAdded={fetchWordsData}
+              open={addWordOpen}
+              setOpen={setAddWordOpen}
+              initialWord={voiceWord}
+            />
             {/* Debug helper - remove after testing */}
             {totalWords === 0 && (
               <div className="absolute -top-12 -left-12 bg-primary text-primary-foreground text-xs px-2 py-1 rounded whitespace-nowrap animate-bounce">
@@ -244,6 +260,11 @@ const Index = () => {
             )}
           </div>
         </div>
+        <VoiceRecognitionDialog
+          open={voiceOpen}
+          onOpenChange={setVoiceOpen}
+          onWordDetected={handleVoiceWord}
+        />
       </div>
     </div>
   );
