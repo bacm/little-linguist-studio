@@ -194,6 +194,7 @@ const Index = () => {
               label="Voice Recognition"
               variant="mint"
               size="sm"
+              navigateTo="/voice"
             />
             <ActionButton
               icon={<Bot className="w-4 h-4" />}

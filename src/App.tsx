@@ -15,6 +15,7 @@ import Flashcards from "./pages/Flashcards";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import VoiceRecognition from "./pages/VoiceRecognition";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,11 @@ const App = () => (
               <Route path="/statistics" element={
                 <ProtectedRoute>
                   <Statistics />
+                </ProtectedRoute>
+              } />
+              <Route path="/voice" element={
+                <ProtectedRoute>
+                  <VoiceRecognition />
                 </ProtectedRoute>
               } />
               <Route path="/ai-suggestions" element={
