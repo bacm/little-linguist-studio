@@ -22,8 +22,22 @@ interface WordCategory {
   color: string;
 }
 
-export const AddWordDialog = ({ onWordAdded }: { onWordAdded?: () => void }) => {
-  const [open, setOpen] = useState(false);
+interface AddWordDialogProps {
+  onWordAdded?: () => void;
+  open?: boolean;
+  setOpen?: (open: boolean) => void;
+  initialWord?: string;
+}
+
+export const AddWordDialog = ({
+  onWordAdded,
+  open: controlledOpen,
+  setOpen: setControlledOpen,
+  initialWord = "",
+}: AddWordDialogProps) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = setControlledOpen ?? setInternalOpen;
   const [word, setWord] = useState("");
   const [pronunciation, setPronunciation] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -59,6 +73,13 @@ export const AddWordDialog = ({ onWordAdded }: { onWordAdded?: () => void }) => 
       fetchCategories();
     }
   }, [open]);
+
+  // Prefill word when provided
+  useEffect(() => {
+    if (initialWord) {
+      setWord(initialWord);
+    }
+  }, [initialWord]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
