@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
   ArrowLeft, 
@@ -132,45 +133,44 @@ const WordDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Mobile App Container */}
-      <div className="max-w-sm mx-auto bg-background min-h-screen">
-        
-        {/* Header */}
-        <div className="bg-primary-light/30 p-4">
-          <div className="flex items-center gap-3 mb-6">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-full"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
+    <div className="min-h-screen bg-mint-light pb-20">
+      {/* Header */}
+      <div className="bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-full"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Word Details</h2>
+            <p className="text-sm text-muted-foreground">Manage word information</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Word Display */}
+      <div className="p-4">
+        <Card className="p-6 bg-card border-0 shadow-lg mb-6">
+          <div className="text-center space-y-4">
+            <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${getCategoryColor(wordData.color)}`}>
+              {wordData.icon}
+            </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Word Details</h1>
+              <h2 className="text-3xl font-bold text-foreground mb-2">{wordData.word}</h2>
+              <div className="flex items-center justify-center gap-1 text-muted-foreground">
+                <Calendar className="w-4 h-4" />
+                <span className="text-sm">First said on {wordData.date}</span>
+              </div>
             </div>
           </div>
-
-          {/* Word Display */}
-          <Card className="p-6 bg-card border-0 shadow-lg">
-            <div className="text-center space-y-4">
-              <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${getCategoryColor(wordData.color)}`}>
-                {wordData.icon}
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-foreground mb-2">{wordData.word}</h2>
-                <div className="flex items-center justify-center gap-1 text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-sm">First said on {wordData.date}</span>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </div>
+        </Card>
 
         {/* Content */}
-        <div className="p-4 space-y-4">
+        <div className="space-y-4">
           
           {/* Category */}
           <div>
@@ -288,11 +288,10 @@ const WordDetail = () => {
               Delete
             </Button>
           </div>
-
-          {/* Bottom Spacing */}
-          <div className="h-6" />
         </div>
       </div>
+
+      <MobileBottomNav />
     </div>
   );
 };

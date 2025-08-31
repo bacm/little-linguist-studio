@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MilestoneCard } from "@/components/MilestoneCard";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { ArrowLeft, Trophy, MessageCircle, TrendingUp, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
@@ -217,45 +218,91 @@ const Statistics = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Mobile App Container */}
-      <div className="max-w-sm mx-auto bg-background min-h-screen">
-        
-        {/* Header */}
-        <div className="bg-primary-light/30 p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-full"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Statistics</h1>
-              <p className="text-sm text-muted-foreground">{currentChild.name}'s language progress</p>
-            </div>
+    <div className="min-h-screen bg-mint-light pb-20">
+      {/* Header */}
+      <div className="bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-full"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Statistics</h1>
+            <p className="text-sm text-muted-foreground">{currentChild.name}'s language progress</p>
           </div>
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="p-4 space-y-6">
-          
-          {/* Vocabulary Growth Chart */}
+      {/* Content */}
+      <div className="p-4 space-y-6">
+        
+        {/* Vocabulary Growth Chart */}
+        <Card className="p-4 bg-card border-0 shadow-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Vocabulary Growth</h2>
+          </div>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={vocabularyGrowthData}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis 
+                  dataKey="month" 
+                  className="text-xs"
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis 
+                  className="text-xs"
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: 'none',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="words" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={3}
+                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="text-center mt-2">
+            <p className="text-sm text-muted-foreground">
+              Total progress: <span className="font-semibold text-primary">{totalWords} words</span>
+            </p>
+          </div>
+        </Card>
+
+        {/* Category Distribution */}
+        {categoryData.length > 0 && (
           <Card className="p-4 bg-card border-0 shadow-lg">
             <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-semibold text-foreground">Vocabulary Growth</h2>
+              <BarChart3 className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold text-foreground">Word Categories</h2>
             </div>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={vocabularyGrowthData}>
+                <BarChart data={categoryData}>
                   <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                   <XAxis 
-                    dataKey="month" 
+                    dataKey="category" 
                     className="text-xs"
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 10 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
                   />
                   <YAxis 
                     className="text-xs"
@@ -269,107 +316,56 @@ const Statistics = () => {
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="words" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={3}
-                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6 }}
+                  <Bar 
+                    dataKey="count" 
+                    fill="hsl(var(--primary))"
+                    radius={[4, 4, 0, 0]}
                   />
-                </LineChart>
+                </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="text-center mt-2">
-              <p className="text-sm text-muted-foreground">
-                Total progress: <span className="font-semibold text-primary">{totalWords} words</span>
-              </p>
-            </div>
           </Card>
+        )}
 
-          {/* Category Distribution */}
-          {categoryData.length > 0 && (
-            <Card className="p-4 bg-card border-0 shadow-lg">
-              <div className="flex items-center gap-2 mb-4">
-                <BarChart3 className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">Word Categories</h2>
-              </div>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={categoryData}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <XAxis 
-                      dataKey="category" 
-                      className="text-xs"
-                      tick={{ fontSize: 10 }}
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
-                    />
-                    <YAxis 
-                      className="text-xs"
-                      tick={{ fontSize: 12 }}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: 'none',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                      }}
-                    />
-                    <Bar 
-                      dataKey="count" 
-                      fill="hsl(var(--primary))"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-          )}
-
-          {/* Milestones & Badges */}
-          <Card className="p-4 bg-card border-0 shadow-lg">
-            <div className="flex items-center gap-2 mb-4">
-              <Trophy className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-semibold text-foreground">Milestones & Badges</h2>
-            </div>
-            <div className="space-y-3">
-              {milestones.map((milestone) => (
-                <MilestoneCard
-                  key={milestone.id}
-                  title={milestone.title}
-                  achieved={milestone.achieved}
-                  target={milestone.target_value}
-                  current={milestone.current_value}
-                  icon={<span className="text-sm">{milestone.icon}</span>}
-                />
-              ))}
-              {milestones.length === 0 && (
-                <p className="text-muted-foreground text-center py-4">
-                  No milestones found. They will be created automatically when you add a child.
-                </p>
-              )}
-            </div>
-          </Card>
-
-          {/* Quick Stats Summary */}
-          <div className="grid grid-cols-2 gap-3">
-            <Card className="p-4 bg-mint-light border-0 shadow-md text-center">
-              <div className="text-2xl font-bold text-mint-foreground">{monthlyAverage}</div>
-              <p className="text-mint-foreground text-sm font-medium">Avg/Month</p>
-            </Card>
-            <Card className="p-4 bg-peach-light border-0 shadow-md text-center">
-              <div className="text-2xl font-bold text-peach-foreground">{categoryData.length}</div>
-              <p className="text-peach-foreground text-sm font-medium">Categories</p>
-            </Card>
+        {/* Milestones & Badges */}
+        <Card className="p-4 bg-card border-0 shadow-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <Trophy className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Milestones & Badges</h2>
           </div>
+          <div className="space-y-3">
+            {milestones.map((milestone) => (
+              <MilestoneCard
+                key={milestone.id}
+                title={milestone.title}
+                achieved={milestone.achieved}
+                target={milestone.target_value}
+                current={milestone.current_value}
+                icon={<span className="text-sm">{milestone.icon}</span>}
+              />
+            ))}
+            {milestones.length === 0 && (
+              <p className="text-muted-foreground text-center py-4">
+                No milestones found. They will be created automatically when you add a child.
+              </p>
+            )}
+          </div>
+        </Card>
 
-          {/* Bottom Spacing */}
-          <div className="h-6" />
+        {/* Quick Stats Summary */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="p-4 bg-mint-light border-0 shadow-md text-center">
+            <div className="text-2xl font-bold text-mint-foreground">{monthlyAverage}</div>
+            <p className="text-mint-foreground text-sm font-medium">Avg/Month</p>
+          </Card>
+          <Card className="p-4 bg-peach-light border-0 shadow-md text-center">
+            <div className="text-2xl font-bold text-peach-foreground">{categoryData.length}</div>
+            <p className="text-peach-foreground text-sm font-medium">Categories</p>
+          </Card>
         </div>
       </div>
+
+      <MobileBottomNav />
     </div>
   );
 };

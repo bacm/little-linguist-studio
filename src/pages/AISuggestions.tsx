@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { ArrowLeft, Lightbulb, TrendingUp, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -91,97 +92,93 @@ const AISuggestions = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-sm mx-auto bg-background min-h-screen">
-        
-        {/* Header */}
-        <div className="bg-primary-light/30 p-4 rounded-b-3xl">
-          <div className="flex items-center space-x-3 mb-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/")}
-              className="hover:bg-white/20"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
+    <div className="min-h-screen bg-mint-light pb-20">
+      {/* Header */}
+      <div className="bg-white p-4 shadow-sm">
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/")}
+            className="w-10 h-10 rounded-full"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
             <h1 className="text-xl font-bold text-foreground">AI Suggestions</h1>
+            <p className="text-sm text-muted-foreground">Personalized word suggestions</p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Personalized word suggestions for Ada (18 months)
-          </p>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-6">
+        
+        {/* Advice Bubbles */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground flex items-center space-x-2">
+            <Lightbulb className="w-5 h-5 text-primary" />
+            <span>Smart Tips</span>
+          </h2>
+          {adviceBubbles.map((advice) => (
+            <Card key={advice.id} className="p-4 bg-primary-light/20 border-0">
+              <p className="text-sm text-foreground">{advice.text}</p>
+            </Card>
+          ))}
         </div>
 
-        <div className="p-4 space-y-6">
-          
-          {/* Advice Bubbles */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground flex items-center space-x-2">
-              <Lightbulb className="w-5 h-5 text-primary" />
-              <span>Smart Tips</span>
-            </h2>
-            {adviceBubbles.map((advice) => (
-              <Card key={advice.id} className="p-4 bg-primary-light/20 border-0">
-                <p className="text-sm text-foreground">{advice.text}</p>
-              </Card>
-            ))}
-          </div>
+        {/* Missing Categories Alert */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground flex items-center space-x-2">
+            <AlertTriangle className="w-5 h-5 text-orange-500" />
+            <span>Focus Areas</span>
+          </h2>
+          {missingCategories.map((category) => (
+            <Card key={category.category} className={`p-4 border ${getSeverityColor(category.severity)}`}>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-medium">{category.category}</h3>
+                  <p className="text-sm opacity-80">
+                    {category.current} of {category.expected} expected words
+                  </p>
+                </div>
+                <Badge variant="secondary" className="bg-white/50">
+                  +{category.expected - category.current} needed
+                </Badge>
+              </div>
+            </Card>
+          ))}
+        </div>
 
-          {/* Missing Categories Alert */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground flex items-center space-x-2">
-              <AlertTriangle className="w-5 h-5 text-orange-500" />
-              <span>Focus Areas</span>
-            </h2>
-            {missingCategories.map((category) => (
-              <Card key={category.category} className={`p-4 border ${getSeverityColor(category.severity)}`}>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="font-medium">{category.category}</h3>
-                    <p className="text-sm opacity-80">
-                      {category.current} of {category.expected} expected words
-                    </p>
+        {/* Suggested Words */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground flex items-center space-x-2">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            <span>Recommended Words</span>
+          </h2>
+          <div className="grid grid-cols-1 gap-2">
+            {suggestedWords.map((item, index) => (
+              <Card key={index} className="p-3 border-0 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-primary-light/30 flex items-center justify-center">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-foreground">{item.word}</h3>
+                      <p className="text-xs text-muted-foreground">{item.category}</p>
+                    </div>
                   </div>
-                  <Badge variant="secondary" className="bg-white/50">
-                    +{category.expected - category.current} needed
+                  <Badge className={getPriorityColor(item.priority)}>
+                    {item.priority}
                   </Badge>
                 </div>
               </Card>
             ))}
           </div>
-
-          {/* Suggested Words */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              <span>Recommended Words</span>
-            </h2>
-            <div className="grid grid-cols-1 gap-2">
-              {suggestedWords.map((item, index) => (
-                <Card key={index} className="p-3 border-0 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full bg-primary-light/30 flex items-center justify-center">
-                        {item.icon}
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-foreground">{item.word}</h3>
-                        <p className="text-xs text-muted-foreground">{item.category}</p>
-                      </div>
-                    </div>
-                    <Badge className={getPriorityColor(item.priority)}>
-                      {item.priority}
-                    </Badge>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* Bottom Spacing */}
-          <div className="h-8" />
         </div>
       </div>
+
+      <MobileBottomNav />
     </div>
   );
 };
