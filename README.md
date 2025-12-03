@@ -1,73 +1,52 @@
-# Welcome to your Lovable project
+# Little Linguist Studio
 
-## Project info
+A React Native/Expo app for tracking a child's language development. Parents can capture new vocabulary, monitor milestones, and visualize progress with Supabase-backed storage and authentication.
 
-**URL**: https://lovable.dev/projects/3988b8ac-cb31-4fe8-9fe2-f9d2f9e001e1
+## Features
 
-## How can I edit this code?
+- **Supabase authentication** for secure email/password sign-in and session persistence. 【F:contexts/AuthContext.tsx†L1-L90】【F:screens/AuthScreen.tsx†L1-L120】
+- **Child profile management** with validation, deletion safeguards, and automatic default milestone seeding. 【F:contexts/ChildContext.tsx†L1-L66】【F:screens/SettingsScreen.tsx†L1-L192】
+- **Vocabulary tracker** to add categorized words, search/filter, and manage entries by child. 【F:screens/VocabularyScreen.tsx†L1-L212】【F:screens/VocabularyScreen.tsx†L200-L312】
+- **Flashcards and quick actions** directly from the home dashboard to review recent words. 【F:screens/HomeScreen.tsx†L1-L156】【F:screens/HomeScreen.tsx†L156-L252】
+- **Milestone and progress dashboards** summarizing word counts, milestone completion, and recent activity. 【F:screens/MilestonesScreen.tsx†L1-L82】【F:screens/StatisticsScreen.tsx†L1-L248】
 
-There are several ways of editing your application.
+## Getting started
 
-**Use Lovable**
+1. **Install dependencies**
+   ```sh
+   npm install
+   ```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3988b8ac-cb31-4fe8-9fe2-f9d2f9e001e1) and start prompting.
+2. **Start the Expo development server**
+   ```sh
+   npm run start
+   ```
 
-Changes made via Lovable will be committed automatically to this repo.
+3. **Open the app**
+   - Press `i`, `a`, or `w` in the Expo CLI to launch iOS, Android, or web respectively, or scan the QR code with Expo Go on a physical device.
 
-**Use your preferred IDE**
+## Supabase configuration
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Supabase connectivity is configured in `integrations/supabase/client.ts`. The client uses the provided project URL and anonymous key and persists sessions via AsyncStorage or `localStorage` on web. Update these values if you point the app to a different Supabase project. 【F:integrations/supabase/client.ts†L1-L40】
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Project structure
 
-Follow these steps:
+- `App.tsx` – navigation shell with tab layout and provider setup. 【F:App.tsx†L1-L88】
+- `contexts/` – authentication and child profile providers. 【F:contexts/AuthContext.tsx†L1-L90】【F:contexts/ChildContext.tsx†L1-L66】
+- `screens/` – feature views for auth, home, vocabulary, statistics, milestones, and settings. 【F:screens/HomeScreen.tsx†L1-L252】【F:screens/SettingsScreen.tsx†L1-L192】
+- `integrations/` – Supabase client and generated types.
+- `lib/` – helpers for database setup and seeding.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Data model (Supabase)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Core tables include:
+- `children` – child profiles linked to a user account. 【F:contexts/ChildContext.tsx†L18-L45】
+- `words` – vocabulary entries with category references and learned dates. 【F:screens/VocabularyScreen.tsx†L17-L96】
+- `word_categories` – color-coded categories used for filtering and flashcards. 【F:screens/VocabularyScreen.tsx†L17-L96】
+- `milestones` – track progress and completion dates. 【F:screens/StatisticsScreen.tsx†L13-L90】
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Contributing
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/3988b8ac-cb31-4fe8-9fe2-f9d2f9e001e1) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Create feature branches for changes.
+- Run `npm run start` to verify the app boots and core flows work.
+- Submit a PR describing the change and any testing performed.
