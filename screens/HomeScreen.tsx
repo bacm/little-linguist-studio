@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
-  Modal 
+  Modal,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useChild } from '../contexts/ChildContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../integrations/supabase/client';
 import FlashcardsScreen from './FlashcardsScreen';
+import { IOSButton } from '../components/IOSButton';
+import { IOSStatCard } from '../components/IOSStatCard';
+import { Colors, Typography, Spacing, BorderRadius, Layout, Shadows } from '../constants/Theme';
+import { updateVocabularyMilestones } from '../lib/milestone-helpers';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -23,7 +27,7 @@ const HomeScreen = () => {
   const [totalWords, setTotalWords] = useState(0);
   const [achievedMilestones, setAchievedMilestones] = useState(0);
   const [loading, setLoading] = useState(true);
-
+  const [refreshing, setRefreshing] = useState(false);
   const [showFlashcardsModal, setShowFlashcardsModal] = useState(false);
 
   useEffect(() => {
@@ -34,14 +38,17 @@ const HomeScreen = () => {
     }
   }, [currentChild, user, childLoading]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (isRefreshing = false) => {
     if (!currentChild || !user) return;
 
     try {
-      setLoading(true);
-
+      if (isRefreshing) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       const today = new Date().toISOString().split('T')[0];
-      
+
       const [wordsResponse, todaysWordsResponse, milestonesResponse] = await Promise.all([
         supabase
           .from('words')
@@ -67,15 +74,27 @@ const HomeScreen = () => {
       setTotalWords(wordsResponse.data?.length || 0);
       setTodaysWords(todaysWordsResponse.data?.length || 0);
       setAchievedMilestones(milestonesResponse.data?.length || 0);
+
+      // Update vocabulary milestones in background
+      updateVocabularyMilestones(currentChild.id, user.id).catch(err =>
+        console.error('Error updating milestones in background:', err)
+      );
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
+  const onRefresh = () => {
+    fetchDashboardData(true);
+  };
+
   const calculateAge = (birthdate: string): string => {
-    const months = Math.floor((Date.now() - new Date(birthdate).getTime()) / (1000 * 60 * 60 * 24 * 30));
+    const months = Math.floor(
+      (Date.now() - new Date(birthdate).getTime()) / (1000 * 60 * 60 * 24 * 30)
+    );
     if (months < 12) {
       return `${months} month${months !== 1 ? 's' : ''} old`;
     } else {
@@ -88,18 +107,10 @@ const HomeScreen = () => {
     }
   };
 
-  const handleAddWord = () => {
-    navigation.navigate('Vocabulary' as never);
-  };
-
-  const openFlashcards = () => {
-    setShowFlashcardsModal(true);
-  };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4A90E2" />
+        <ActivityIndicator size="large" color={Colors.systemBlue} />
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
@@ -107,79 +118,136 @@ const HomeScreen = () => {
 
   if (!currentChild) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.noChildTitle}>Welcome to Little Linguist Studio! 👶</Text>
-        <Text style={styles.noChildText}>Please add a child profile in Settings to get started tracking their language development.</Text>
-        <TouchableOpacity 
-          style={styles.settingsButton}
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyIcon}>👶</Text>
+        <Text style={styles.emptyTitle}>Welcome to Little Linguist!</Text>
+        <Text style={styles.emptyText}>
+          Add your child's profile in Settings to start tracking their language journey.
+        </Text>
+        <IOSButton
+          title="Go to Settings"
           onPress={() => navigation.navigate('Settings' as never)}
-        >
-          <Text style={styles.settingsButtonText}>Go to Settings</Text>
-        </TouchableOpacity>
+          style={styles.emptyButton}
+        />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Child Profile Header */}
-      <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {currentChild.name.charAt(0).toUpperCase()}
-            </Text>
+    <>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.systemBlue}
+          />
+        }
+      >
+        {/* Compact Header */}
+        <View style={styles.header}>
+          <View style={styles.avatarContainer}>
+            <Text style={styles.avatar}>{currentChild.avatar || '👶'}</Text>
+          </View>
+          <View style={styles.headerText}>
+            <Text style={styles.childName}>{currentChild.name}</Text>
+            <Text style={styles.childAge}>{calculateAge(currentChild.birthdate)}</Text>
           </View>
         </View>
-        <Text style={styles.childName}>{currentChild.name}</Text>
-        <Text style={styles.childAge}>{calculateAge(currentChild.birthdate)}</Text>
-      </View>
 
-      {/* Dashboard Stats */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{totalWords}</Text>
-          <Text style={styles.statLabel}>Total Words</Text>
+        {/* Stats Grid */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Overview</Text>
+          <View style={styles.statsGrid}>
+            <IOSStatCard
+              title="Total Words"
+              value={totalWords}
+              icon="📚"
+              color={Colors.systemBlue}
+            />
+            <IOSStatCard
+              title="Today"
+              value={todaysWords}
+              icon="✨"
+              color={Colors.systemGreen}
+            />
+            <IOSStatCard
+              title="Milestones"
+              value={achievedMilestones}
+              icon="🏆"
+              color={Colors.systemOrange}
+            />
+          </View>
         </View>
-        
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{todaysWords}</Text>
-          <Text style={styles.statLabel}>Today's Words</Text>
-        </View>
-        
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{achievedMilestones}</Text>
-          <Text style={styles.statLabel}>Milestones</Text>
-        </View>
-      </View>
 
-      {/* Quick Actions */}
-      <View style={styles.quickActionsSection}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        
-        <View style={styles.quickActionsGrid}>
-          <TouchableOpacity style={styles.quickActionCard} onPress={handleAddWord}>
-            <Text style={styles.quickActionIcon}>📝</Text>
-            <Text style={styles.quickActionTitle}>Add Word</Text>
-            <Text style={styles.quickActionSubtitle}>Track new vocabulary</Text>
-          </TouchableOpacity>
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.actionsContainer}>
+            <View style={styles.actionsRow}>
+              <View style={styles.actionWrapper}>
+                <TouchableOpacity
+                  style={styles.actionCard}
+                  onPress={() => navigation.navigate('Vocabulary' as never)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.actionIconContainer, { backgroundColor: Colors.systemBlue + '15' }]}>
+                    <Text style={styles.actionIcon}>📝</Text>
+                  </View>
+                  <Text style={styles.actionTitle}>Add Word</Text>
+                  <Text style={styles.actionSubtitle}>Track vocabulary</Text>
+                </TouchableOpacity>
+              </View>
 
-          <TouchableOpacity style={styles.quickActionCard} onPress={openFlashcards}>
-            <Text style={styles.quickActionIcon}>🎴</Text>
-            <Text style={styles.quickActionTitle}>Flashcards</Text>
-            <Text style={styles.quickActionSubtitle}>Review words</Text>
-          </TouchableOpacity>
+              <View style={styles.actionWrapper}>
+                <TouchableOpacity
+                  style={styles.actionCard}
+                  onPress={() => setShowFlashcardsModal(true)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.actionIconContainer, { backgroundColor: Colors.systemPurple + '15' }]}>
+                    <Text style={styles.actionIcon}>🎴</Text>
+                  </View>
+                  <Text style={styles.actionTitle}>Flashcards</Text>
+                  <Text style={styles.actionSubtitle}>Review words</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
 
-          <TouchableOpacity
-            style={styles.quickActionCard}
-            onPress={() => navigation.navigate('Statistics' as never)}
-          >
-            <Text style={styles.quickActionIcon}>📊</Text>
-            <Text style={styles.quickActionTitle}>Statistics</Text>
-            <Text style={styles.quickActionSubtitle}>View progress</Text>
-          </TouchableOpacity>
+            <View style={styles.actionsRow}>
+              <View style={styles.actionWrapper}>
+                <TouchableOpacity
+                  style={styles.actionCard}
+                  onPress={() => navigation.navigate('Milestones' as never)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.actionIconContainer, { backgroundColor: Colors.systemOrange + '15' }]}>
+                    <Text style={styles.actionIcon}>🎯</Text>
+                  </View>
+                  <Text style={styles.actionTitle}>Milestones</Text>
+                  <Text style={styles.actionSubtitle}>Track progress</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.actionWrapper}>
+                <TouchableOpacity
+                  style={styles.actionCard}
+                  onPress={() => navigation.navigate('Statistics' as never)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.actionIconContainer, { backgroundColor: Colors.systemGreen + '15' }]}>
+                    <Text style={styles.actionIcon}>📊</Text>
+                  </View>
+                  <Text style={styles.actionTitle}>Statistics</Text>
+                  <Text style={styles.actionSubtitle}>View insights</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Flashcards Modal */}
       <Modal
@@ -187,188 +255,174 @@ const HomeScreen = () => {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={styles.modalHeader}>
-          <TouchableOpacity
-            onPress={() => setShowFlashcardsModal(false)}
-            style={styles.modalCloseButton}
-          >
-            <Text style={styles.modalCloseText}>Done</Text>
-          </TouchableOpacity>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setShowFlashcardsModal(false)}
+              style={styles.modalCloseButton}
+            >
+              <Text style={styles.modalCloseText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          <FlashcardsScreen />
         </View>
-        <FlashcardsScreen />
       </Modal>
-    </ScrollView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.systemGroupedBackground,
+  },
+  scrollContent: {
+    paddingBottom: Spacing.xxl,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.systemGroupedBackground,
   },
   loadingText: {
-    marginTop: 10,
-    color: '#666',
-    fontSize: 16,
+    ...Typography.body,
+    color: Colors.secondaryLabel,
+    marginTop: Spacing.md,
   },
-  centerContainer: {
+  emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    backgroundColor: Colors.systemGroupedBackground,
+    padding: Layout.screenPadding,
   },
-  noChildTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: Spacing.lg,
+  },
+  emptyTitle: {
+    ...Typography.title1,
+    color: Colors.label,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: Spacing.sm,
   },
-  noChildText: {
-    fontSize: 16,
-    color: '#666',
+  emptyText: {
+    ...Typography.body,
+    color: Colors.secondaryLabel,
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
+    lineHeight: 22,
+    marginBottom: Spacing.xl,
+    maxWidth: 300,
   },
-  settingsButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+  emptyButton: {
+    minWidth: 200,
   },
-  settingsButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  // Compact horizontal header
   header: {
-    backgroundColor: 'white',
+    backgroundColor: Colors.secondarySystemGroupedBackground,
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Layout.screenPadding,
+    marginBottom: Spacing.lg,
   },
   avatarContainer: {
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    backgroundColor: '#007AFF',
-    borderRadius: 40,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.systemBlue + '15',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    marginRight: Spacing.md,
   },
-  avatarText: {
-    color: 'white',
-    fontSize: 32,
-    fontWeight: 'bold',
+  avatar: {
+    fontSize: 28,
+  },
+  headerText: {
+    flex: 1,
   },
   childName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
+    ...Typography.title3,
+    color: Colors.label,
+    marginBottom: 2,
   },
   childAge: {
-    fontSize: 16,
-    color: '#666',
+    ...Typography.footnote,
+    color: Colors.secondaryLabel,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    padding: 16,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  statNumber: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-  quickActionsSection: {
-    padding: 16,
+  section: {
+    paddingHorizontal: Layout.screenPadding,
+    marginBottom: Spacing.xl,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
+    ...Typography.title3,
+    color: Colors.label,
+    marginBottom: Spacing.md,
   },
-  quickActionsGrid: {
+  statsGrid: {
+    gap: Spacing.md,
+  },
+  // Fixed grid layout for actions
+  actionsContainer: {
+    gap: Spacing.md,
+  },
+  actionsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+    gap: Spacing.md,
   },
-  quickActionCard: {
-    width: '48%',
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 12,
+  actionWrapper: {
+    flex: 1,
+  },
+  actionCard: {
+    backgroundColor: Colors.secondarySystemGroupedBackground,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    ...Shadows.small,
   },
-  quickActionIcon: {
-    fontSize: 32,
-    marginBottom: 8,
+  actionIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
   },
-  quickActionTitle: {
-    fontSize: 16,
+  actionIcon: {
+    fontSize: 26,
+  },
+  actionTitle: {
+    ...Typography.subheadline,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    color: Colors.label,
+    marginBottom: 2,
   },
-  quickActionSubtitle: {
-    fontSize: 12,
-    color: '#666',
+  actionSubtitle: {
+    ...Typography.caption1,
+    color: Colors.secondaryLabel,
     textAlign: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: Colors.systemGroupedBackground,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    alignItems: 'center',
+    paddingHorizontal: Layout.screenPadding,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.secondarySystemGroupedBackground,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.separator,
   },
   modalCloseButton: {
-    padding: 8,
+    padding: Spacing.sm,
   },
   modalCloseText: {
-    color: '#007AFF',
-    fontSize: 16,
+    ...Typography.body,
+    color: Colors.systemBlue,
     fontWeight: '600',
   },
 });

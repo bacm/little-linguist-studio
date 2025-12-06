@@ -19,18 +19,38 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.bacm.littlelinguiststudio",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSExceptionDomains": {
+            "supabase.co": {
+              "NSIncludesSubdomains": true,
+              "NSTemporaryExceptionAllowsInsecureHTTPLoads": false,
+              "NSTemporaryExceptionRequiresForwardSecrecy": true,
+              "NSTemporaryExceptionMinimumTLSVersion": "TLSv1.2"
+            }
+          }
+        },
+        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition to help you quickly add words your child is learning to their vocabulary tracker.",
+        "NSMicrophoneUsageDescription": "This app needs microphone access to use voice input for adding words to your child's vocabulary."
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.bacm.littlelinguiststudio",
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      "expo-speech-recognition"
+    ],
     "extra": {
       "eas": {
         "projectId": "44c74f58-9f49-434c-be6a-8d67aca8fda6"

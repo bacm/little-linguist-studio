@@ -3,8 +3,8 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://soqqamkrbcwzimwrkclb.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvcXFhbWtyYmN3emltd3JrY2xiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MDgyODQsImV4cCI6MjA3MTk4NDI4NH0.Sr44SCYO2P9_bA2u-McKXkm1IWhYcaFIWZj-r_ZGdVI";
+const SUPABASE_URL = "https://dixfpgvnjpjaywwzqhfe.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpeGZwZ3ZuanBqYXl3d3pxaGZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5ODk2MzUsImV4cCI6MjA4MDU2NTYzNX0.IXdSnFd_h6_SDCEkOZCn5qRJry1m7yZkpsPUji1uG5E";
 
 // Validate configuration
 console.log('Supabase Configuration:', {
@@ -41,6 +41,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: Platform.OS === 'web',
-    flowType: 'pkce',
+    // Use implicit flow on mobile (PKCE requires WebCrypto API which isn't available on React Native)
+    flowType: Platform.OS === 'web' ? 'pkce' : 'implicit',
   }
 });

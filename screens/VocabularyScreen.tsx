@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,22 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  Keyboard,
+  Animated,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  useSpeechRecognitionEvent,
+  ExpoSpeechRecognitionModule,
+} from 'expo-speech-recognition';
 import { useChild } from '../contexts/ChildContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../integrations/supabase/client';
 import { Tables } from '../integrations/supabase/types';
+import { updateVocabularyMilestones, getMilestoneAchievedMessage } from '../lib/milestone-helpers';
+
+const LANGUAGE_STORAGE_KEY = '@voice_recognition_language';
 
 interface Word extends Tables<'words'> {
   word_categories?: Tables<'word_categories'>;
@@ -33,13 +44,89 @@ const VocabularyScreen = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newWord, setNewWord] = useState('');
   const [newWordCategory, setNewWordCategory] = useState('');
+  const [autoCategories, setAutoCategories] = useState<string[]>([]);
+    // Fonction pour récupérer la catégorie sémantique via ConceptNet
+    async function getConceptNetCategory(word: string): Promise<string[]> {
+      const url = `https://api.conceptnet.io/query?node=/c/fr/${encodeURIComponent(word)}&rel=/r/IsA&limit=5`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        const categories = data.edges.map((edge: any) => edge.end.label);
+        return categories;
+      } catch (e) {
+        console.error('ConceptNet error:', e);
+        return [];
+      }
+    }
   const [addingWord, setAddingWord] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en-US');
+  const wordInputRef = useRef<TextInput>(null);
+
+  // Toast state
+  const [toastMessage, setToastMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+
+  // Speech recognition listener
+  useSpeechRecognitionEvent('result', (event) => {
+    const transcript = event.results[0]?.transcript;
+    if (transcript) {
+      setNewWord(transcript);
+    }
+  });
+
+  useSpeechRecognitionEvent('end', () => {
+    setIsListening(false);
+  });
+
+  useSpeechRecognitionEvent('error', (event) => {
+    console.error('Speech recognition error:', event.error);
+    setIsListening(false);
+    Alert.alert('Voice Error', 'Could not recognize speech. Please try again.');
+  });
 
   useEffect(() => {
     if (currentChild && user) {
       fetchData();
     }
   }, [currentChild, user]);
+
+  useEffect(() => {
+    loadLanguagePreference();
+  }, []);
+
+  const loadLanguagePreference = async () => {
+    try {
+      const savedLanguage = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
+      if (savedLanguage) {
+        setSelectedLanguage(savedLanguage);
+      }
+    } catch (error) {
+      console.error('Error loading language preference:', error);
+    }
+  };
+
+  const showToastMessage = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+
+    Animated.sequence([
+      Animated.timing(toastOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.delay(2000),
+      Animated.timing(toastOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowToast(false);
+    });
+  };
 
   const fetchData = async () => {
     if (!currentChild || !user) return;
@@ -88,17 +175,48 @@ const VocabularyScreen = () => {
   };
 
   const addWord = async () => {
-    if (!newWord.trim() || !newWordCategory || !currentChild || !user) {
+    if (!newWord.trim() || !currentChild || !user) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     setAddingWord(true);
+    const wordToAdd = newWord.trim();
+
+    // 1. Récupérer la catégorie sémantique automatiquement
+    let autoCategory = '';
+    let autoCategoryId = '';
+    try {
+      const categoriesFound = await getConceptNetCategory(wordToAdd);
+      setAutoCategories(categoriesFound);
+      if (categoriesFound.length > 0) {
+        autoCategory = categoriesFound[0];
+        // Vérifier si la catégorie existe déjà dans la DB
+        let categoryRow = categories.find(c => c.name.toLowerCase() === autoCategory.toLowerCase());
+        if (!categoryRow) {
+          // Créer la catégorie si elle n'existe pas
+          const { data: newCat, error: catError } = await supabase.from('word_categories').insert({
+            name: autoCategory,
+            color: '#34C759', // couleur par défaut
+          }).select();
+          if (catError) {
+            console.error('Error creating category:', catError);
+          }
+          categoryRow = newCat?.[0];
+        }
+        autoCategoryId = categoryRow?.id || '';
+      }
+    } catch (e) {
+      console.error('ConceptNet categorization failed:', e);
+    }
+
+    // 2. Utiliser la catégorie auto si trouvée, sinon celle sélectionnée manuellement
+    const finalCategoryId = autoCategoryId || newWordCategory;
 
     try {
       const { error } = await supabase.from('words').insert({
-        word: newWord.trim(),
-        category_id: newWordCategory,
+        word: wordToAdd,
+        category_id: finalCategoryId,
         child_id: currentChild.id,
         user_id: user.id,
         date_learned: new Date().toISOString().split('T')[0],
@@ -108,10 +226,41 @@ const VocabularyScreen = () => {
         console.error('Error adding word:', error);
         Alert.alert('Error', 'Failed to add word');
       } else {
-        Alert.alert('Success', `Added "${newWord}" to vocabulary!`);
         setNewWord('');
+        setNewWordCategory('');
         setShowAddModal(false);
-        fetchData();
+        await fetchData();
+        try {
+          await updateVocabularyMilestones(currentChild.id, user.id);
+          const { data: milestones } = await supabase
+            .from('milestones')
+            .select('*')
+            .eq('child_id', currentChild.id)
+            .eq('user_id', user.id)
+            .eq('milestone_type', 'vocabulary')
+            .eq('achieved', true);
+          const { data: wordsCount } = await supabase
+            .from('words')
+            .select('id')
+            .eq('child_id', currentChild.id)
+            .eq('user_id', user.id);
+          const totalWords = wordsCount?.length || 0;
+          const justAchievedMilestone = milestones?.find(
+            m => m.target_value === totalWords
+          );
+          if (justAchievedMilestone) {
+            Alert.alert(
+              '🎉 Milestone Achieved!',
+              getMilestoneAchievedMessage(justAchievedMilestone.title),
+              [{ text: 'Awesome!', style: 'default' }]
+            );
+          } else {
+            showToastMessage(`✓ Added "${wordToAdd}"`);
+          }
+        } catch (err) {
+          console.error('Error updating milestones:', err);
+          showToastMessage(`✓ Added "${wordToAdd}"`);
+        }
       }
     } catch (error) {
       console.error('Error:', error);
@@ -141,7 +290,11 @@ const VocabularyScreen = () => {
                 console.error('Error deleting word:', error);
                 Alert.alert('Error', 'Failed to delete word');
               } else {
-                fetchData();
+                await fetchData();
+                // Update milestones after deletion
+                if (currentChild && user) {
+                  await updateVocabularyMilestones(currentChild.id, user.id);
+                }
               }
             } catch (error) {
               console.error('Error:', error);
@@ -167,6 +320,17 @@ const VocabularyScreen = () => {
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
     return category?.name || 'Unknown';
+  };
+
+  const handleOpenAddModal = () => {
+    setShowAddModal(true);
+  };
+
+  const handleCloseAddModal = () => {
+    // Reset form when closing modal
+    setNewWord('');
+    setNewWordCategory('');
+    setShowAddModal(false);
   };
 
   if (loading) {
@@ -239,7 +403,7 @@ const VocabularyScreen = () => {
 
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => setShowAddModal(true)}
+          onPress={handleOpenAddModal}
         >
           <Text style={styles.addButtonText}>+ Add Word</Text>
         </TouchableOpacity>
@@ -302,7 +466,7 @@ const VocabularyScreen = () => {
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity
-              onPress={() => setShowAddModal(false)}
+              onPress={handleCloseAddModal}
               style={styles.modalCloseButton}
             >
               <Text style={styles.modalCloseText}>Cancel</Text>
@@ -324,13 +488,66 @@ const VocabularyScreen = () => {
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Word</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Enter the word..."
-                value={newWord}
-                onChangeText={setNewWord}
-                autoFocus
-              />
+              <View style={styles.wordInputContainer}>
+                <TextInput
+                  ref={wordInputRef}
+                  style={styles.modalInput}
+                  placeholder="Type or say the word..."
+                  value={newWord}
+                  onChangeText={setNewWord}
+                  autoFocus
+                  returnKeyType="done"
+                  enablesReturnKeyAutomatically
+                />
+                <TouchableOpacity
+                  style={[styles.micButton, isListening && styles.micButtonActive]}
+                  onPress={async () => {
+                    if (isListening) {
+                      // Stop listening
+                      ExpoSpeechRecognitionModule.stop();
+                      setIsListening(false);
+                    } else {
+                      // Start listening
+                      try {
+                        const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+                        if (!result.granted) {
+                          Alert.alert(
+                            'Permission Required',
+                            'Please enable microphone access in Settings to use voice input.',
+                            [{ text: 'OK' }]
+                          );
+                          return;
+                        }
+
+                        setIsListening(true);
+                        ExpoSpeechRecognitionModule.start({
+                          lang: selectedLanguage,
+                          interimResults: true,
+                          maxAlternatives: 1,
+                          continuous: false,
+                          requiresOnDeviceRecognition: false,
+                        });
+                      } catch (error) {
+                        console.error('Speech recognition error:', error);
+                        Alert.alert('Error', 'Could not start voice recognition.');
+                        setIsListening(false);
+                      }
+                    }
+                  }}
+                >
+                  <Ionicons
+                    name={isListening ? "mic" : "mic-outline"}
+                    size={24}
+                    color={isListening ? "#FF3B30" : "#007AFF"}
+                  />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.voiceHintText}>
+                {isListening ? '🎤 Listening... Speak now!' : '💡 Tap the microphone to use voice input'}
+              </Text>
+              <Text style={styles.voiceLanguageHint}>
+                Change voice language in Settings
+              </Text>
             </View>
 
             <View style={styles.inputGroup}>
@@ -354,6 +571,20 @@ const VocabularyScreen = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Toast Notification */}
+      {showToast && (
+        <Animated.View
+          style={[
+            styles.toast,
+            {
+              opacity: toastOpacity,
+            },
+          ]}
+        >
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </Animated.View>
+      )}
     </View>
   );
 };
@@ -564,13 +795,40 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 8,
   },
-  modalInput: {
+  wordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+    paddingRight: 8,
+  },
+  modalInput: {
+    flex: 1,
     padding: 16,
     fontSize: 18,
-    backgroundColor: '#f9f9f9',
+  },
+  micButton: {
+    padding: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  micButtonActive: {
+    backgroundColor: '#FF3B3020',
+  },
+  voiceHintText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  voiceLanguageHint: {
+    fontSize: 11,
+    color: '#999',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   modalCategoryButton: {
     paddingHorizontal: 16,
@@ -584,6 +842,27 @@ const styles = StyleSheet.create({
   modalCategoryButtonText: {
     color: 'white',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  toast: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: '#34C759',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  toastText: {
+    color: 'white',
+    fontSize: 15,
     fontWeight: '600',
   },
 });

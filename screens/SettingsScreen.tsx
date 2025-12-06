@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,17 +10,64 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { useChild } from '../contexts/ChildContext';
 import { supabase } from '../integrations/supabase/client';
+
+const LANGUAGE_STORAGE_KEY = '@voice_recognition_language';
 
 const SettingsScreen = () => {
   const { user, signOut } = useAuth();
   const { currentChild, children, refreshChildren } = useChild();
   const [showAddChildModal, setShowAddChildModal] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [childName, setChildName] = useState('');
   const [childBirthdate, setChildBirthdate] = useState('');
   const [addingChild, setAddingChild] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en-US');
+
+  const languages = [
+    { code: 'en-US', name: 'English (US)', flag: '🇺🇸' },
+    { code: 'en-GB', name: 'English (UK)', flag: '🇬🇧' },
+    { code: 'fr-FR', name: 'Français', flag: '🇫🇷' },
+    { code: 'es-ES', name: 'Español', flag: '🇪🇸' },
+    { code: 'de-DE', name: 'Deutsch', flag: '🇩🇪' },
+    { code: 'it-IT', name: 'Italiano', flag: '🇮🇹' },
+    { code: 'pt-BR', name: 'Português', flag: '🇧🇷' },
+    { code: 'nl-NL', name: 'Nederlands', flag: '🇳🇱' },
+    { code: 'ja-JP', name: '日本語', flag: '🇯🇵' },
+    { code: 'zh-CN', name: '中文', flag: '🇨🇳' },
+    { code: 'ar-SA', name: 'العربية', flag: '🇸🇦' },
+    { code: 'ru-RU', name: 'Русский', flag: '🇷🇺' },
+  ];
+
+  useEffect(() => {
+    loadLanguagePreference();
+  }, []);
+
+  const loadLanguagePreference = async () => {
+    try {
+      const savedLanguage = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
+      if (savedLanguage) {
+        setSelectedLanguage(savedLanguage);
+      }
+    } catch (error) {
+      console.error('Error loading language preference:', error);
+    }
+  };
+
+  const saveLanguagePreference = async (languageCode: string) => {
+    try {
+      await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, languageCode);
+      setSelectedLanguage(languageCode);
+      setShowLanguageModal(false);
+      Alert.alert('Success', 'Voice recognition language updated');
+    } catch (error) {
+      console.error('Error saving language preference:', error);
+      Alert.alert('Error', 'Failed to save language preference');
+    }
+  };
 
   const handleSignOut = () => {
     Alert.alert(
@@ -188,6 +235,24 @@ const SettingsScreen = () => {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Preferences</Text>
+          <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.cardRow}
+              onPress={() => setShowLanguageModal(true)}
+            >
+              <View>
+                <Text style={styles.label}>Voice Recognition Language</Text>
+                <Text style={styles.languageSubtext}>
+                  {languages.find(l => l.code === selectedLanguage)?.flag} {languages.find(l => l.code === selectedLanguage)?.name}
+                </Text>
+              </View>
+              <Text style={styles.arrow}>→</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>App</Text>
           <View style={styles.card}>
             <TouchableOpacity style={styles.cardRow}>
@@ -267,6 +332,51 @@ const SettingsScreen = () => {
               </Text>
             </View>
           </View>
+        </View>
+      </Modal>
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={showLanguageModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setShowLanguageModal(false)}
+              style={styles.modalCloseButton}
+            >
+              <Text style={styles.modalCloseText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Voice Language</Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <Text style={styles.languageDescription}>
+              Select the language for voice recognition when adding words. This will be used when you tap the microphone button.
+            </Text>
+
+            {languages.map((language) => (
+              <TouchableOpacity
+                key={language.code}
+                style={[
+                  styles.languageOption,
+                  selectedLanguage === language.code && styles.selectedLanguageOption,
+                ]}
+                onPress={() => saveLanguagePreference(language.code)}
+              >
+                <View style={styles.languageInfo}>
+                  <Text style={styles.languageFlag}>{language.flag}</Text>
+                  <Text style={styles.languageName}>{language.name}</Text>
+                </View>
+                {selectedLanguage === language.code && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       </Modal>
     </View>
@@ -462,6 +572,50 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
     lineHeight: 16,
+  },
+  languageSubtext: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  languageDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  selectedLanguageOption: {
+    backgroundColor: '#e6f2ff',
+    borderColor: '#007AFF',
+  },
+  languageInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  languageFlag: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  languageName: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  checkmark: {
+    fontSize: 20,
+    color: '#007AFF',
+    fontWeight: 'bold',
   },
 });
 

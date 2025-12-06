@@ -4,6 +4,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChildProvider } from './contexts/ChildContext';
 import AuthScreen from './screens/AuthScreen';
@@ -13,7 +15,8 @@ import MilestonesScreen from './screens/MilestonesScreen';
 import VocabularyScreen from './screens/VocabularyScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import StatisticsScreen from './screens/StatisticsScreen';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Platform, StyleSheet } from 'react-native';
+import { Colors } from './constants/Theme';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -39,73 +42,111 @@ const AppContent = () => {
     <ChildProvider>
       <Tab.Navigator
         screenOptions={{
+          headerStyle: {
+            backgroundColor: Colors.secondarySystemGroupedBackground,
+            elevation: 0,
+            shadowOpacity: 0,
+            borderBottomWidth: 0,
+          },
+          headerTitleStyle: {
+            fontSize: 17,
+            fontWeight: '600',
+            color: Colors.label,
+          },
           tabBarStyle: {
-            paddingBottom: 8,
+            backgroundColor: Colors.secondarySystemGroupedBackground,
+            borderTopWidth: 0.5,
+            borderTopColor: Colors.separator,
             paddingTop: 8,
-            height: 60,
+            paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+            height: Platform.OS === 'ios' ? 88 : 68,
           },
           tabBarLabelStyle: {
-            fontSize: 12,
+            fontSize: 10,
             fontWeight: '500',
+            marginTop: -4,
           },
-          tabBarActiveTintColor: '#007AFF',
-          tabBarInactiveTintColor: '#8E8E93',
+          tabBarActiveTintColor: Colors.systemBlue,
+          tabBarInactiveTintColor: Colors.systemGray,
+          tabBarIconStyle: {
+            marginTop: 4,
+          },
         }}
       >
-        <Tab.Screen 
-          name="Home" 
-          component={HomeScreen} 
-          options={{ 
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
             title: 'Home',
-            headerTitle: 'Little Linguist Studio',
-            tabBarIcon: ({ color }) => (
-              <View style={{ width: 24, height: 24, backgroundColor: color, borderRadius: 12 }} />
+            headerShown: false,
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? 'home' : 'home-outline'}
+                size={24}
+                color={color}
+              />
             ),
-          }} 
+          }}
         />
-        <Tab.Screen 
-          name="Vocabulary" 
-          component={VocabularyScreen} 
-          options={{ 
+        <Tab.Screen
+          name="Vocabulary"
+          component={VocabularyScreen}
+          options={{
             title: 'Words',
-            headerTitle: 'Vocabulary Tracker',
-            tabBarIcon: ({ color }) => (
-              <View style={{ width: 24, height: 24, backgroundColor: color, borderRadius: 4 }} />
+            headerTitle: 'Vocabulary',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? 'book' : 'book-outline'}
+                size={24}
+                color={color}
+              />
             ),
-          }} 
+          }}
         />
-        <Tab.Screen 
-          name="Statistics" 
-          component={StatisticsScreen} 
-          options={{ 
+        <Tab.Screen
+          name="Milestones"
+          component={MilestonesScreen}
+          options={{
+            title: 'Milestones',
+            headerTitle: 'Milestones',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? 'trophy' : 'trophy-outline'}
+                size={24}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Statistics"
+          component={StatisticsScreen}
+          options={{
             title: 'Stats',
             headerTitle: 'Statistics',
-            tabBarIcon: ({ color }) => (
-              <View style={{ width: 24, height: 24, backgroundColor: color, borderRadius: 6 }} />
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? 'stats-chart' : 'stats-chart-outline'}
+                size={24}
+                color={color}
+              />
             ),
-          }} 
+          }}
         />
-        <Tab.Screen 
-          name="Milestones" 
-          component={MilestonesScreen} 
-          options={{ 
-            title: 'Milestones',
-            headerTitle: 'Speech Milestones',
-            tabBarIcon: ({ color }) => (
-              <View style={{ width: 24, height: 24, backgroundColor: color, borderRadius: 8 }} />
-            ),
-          }} 
-        />
-        <Tab.Screen 
-          name="Settings" 
-          component={SettingsScreen} 
-          options={{ 
+        <Tab.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
             title: 'Settings',
             headerTitle: 'Settings',
-            tabBarIcon: ({ color }) => (
-              <View style={{ width: 24, height: 24, backgroundColor: color, borderRadius: 4 }} />
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? 'settings' : 'settings-outline'}
+                size={24}
+                color={color}
+              />
             ),
-          }} 
+          }}
         />
       </Tab.Navigator>
     </ChildProvider>
@@ -114,13 +155,21 @@ const AppContent = () => {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <NavigationContainer>
-          <StatusBar style="auto" />
-          <AppContent />
-        </NavigationContainer>
-      </AuthProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={styles.gestureContainer}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <NavigationContainer>
+            <StatusBar style="auto" />
+            <AppContent />
+          </NavigationContainer>
+        </AuthProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  gestureContainer: {
+    flex: 1,
+  },
+});
